@@ -1,3 +1,0 @@
-# Ophelia's Oasis Requirement List
-
-- ...

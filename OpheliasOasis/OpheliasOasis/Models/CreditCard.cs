@@ -4,6 +4,7 @@ namespace Oasis.Models
 {
     public class CreditCard
     {
+        public int ResId;
         public string Name;
         public string Number;
         public DateTime Expiration;

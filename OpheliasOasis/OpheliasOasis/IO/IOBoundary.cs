@@ -27,6 +27,7 @@ namespace Oasis.IO
             {
                 { typeof(Day), "days" },
                 { typeof(Reservation), "reservations" },
+                { typeof(CreditCard), "creditcards" },
             };
 
             return modelFileNames.TryGetValue(typeof(T), out string name) ? name : throw new Exception("Unknown model");

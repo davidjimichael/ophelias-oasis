@@ -1,8 +1,6 @@
-﻿using Newtonsoft.Json;
-using Oasis.IO;
+﻿using Oasis.IO;
 using Oasis.Models;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -17,7 +15,7 @@ namespace Oasis
 
         public Hotel()
         {
-            // make sure to set nextId to the current max id value + 1
+            // todo make sure to set nextId to the current max id value + 1
             nextId = 0;
             dal = new DAL();
         }
@@ -202,6 +200,15 @@ namespace Oasis
             return false;
         }
 
+        public bool AddCreditCard(int resId, CreditCard card)
+        {
+            // check red id has card
+            card.ResId = resId;
+            // check card is valid
+            // lowkey lets just set the card id to the res id
+            return dal.Create<CreditCard>(new[] { card });
+        }
+
         public bool BookReservation(string name, string email, DateTime start, DateTime end)
         {
             // todo commented out for testing purposes
@@ -280,6 +287,7 @@ namespace Oasis
             IOBoundary.Add<Reservation, int>(
                 items: new Reservation[] { res },
                 order: r => r.Id);
+            //dal.Create(new[] { res }, orderBy: r => r.Id);
             // todo set the updated days
             // throw new NotImplementedException();
             return true;

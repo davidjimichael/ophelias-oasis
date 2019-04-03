@@ -1,11 +1,11 @@
-﻿using Newtonsoft.Json;
-using Oasis.BusinessLogic;
+﻿using Oasis.BusinessLogic;
 using Oasis.Models;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
 
 // todo clean up there's like 3 different ways you do everything
 namespace Oasis.IO
@@ -16,11 +16,11 @@ namespace Oasis.IO
     /// 
     /// one thing i would like to do is add generic get and sets for use with each model
     /// </summary>
-    public class IOBoundary : IDisposable
+    public class IOBoundary
     {
         #region ioboundary
         //private static readonly string DEFAULT_FOLDER = @"F:\OpheliasOasis\OpheliasOasis\IO\";
-        private static readonly string DEFAULT_FOLDER = @"F:\OpheliasOasis (5)\OpheliasOasis (4)\OpheliasOasis\OpheliasOasis\IO\";
+        private static readonly string DEFAULT_FOLDER = @"C:\Users\david\Desktop\ophelias-oasis\OpheliasOasis\OpheliasOasis\IO\";
         private static string GetModelName<T>()
         {
             var modelFileNames = new Dictionary<Type, string>()
@@ -81,147 +81,147 @@ namespace Oasis.IO
         }
         #endregion
 
-        #region iogenerics
-        // just to reduce templating later on
-        public static IEnumerable<T> Get<T>(Func<T, bool> filter = null)
-        {
-            return Get<T, T>(filter);
-        }
+        //#region iogenerics
+        //// just to reduce templating later on
+        //public static IEnumerable<T> Get<T>(Func<T, bool> filter = null)
+        //{
+        //    return Get<T, T>(filter);
+        //}
 
-        public static IEnumerable<R> Get<T, R>(Func<T, bool> filter = null, Func<T, R> map = null)
-        {
-            try
-            {
-                var iob = new IOBoundary(GetModelName<T>());
-                var lines = iob.Read();
+        //public static IEnumerable<R> Get<T, R>(Func<T, bool> filter = null, Func<T, R> map = null)
+        //{
+        //    try
+        //    {
+        //        var iob = new IOBoundary(GetModelName<T>());
+        //        var lines = iob.Read();
 
-                IEnumerable<T> objs = lines.Select(l => JsonConvert.DeserializeObject<T>(l));
+        //        IEnumerable<T> objs = lines.Select(l => JsonConvert.DeserializeObject<T>(l));
 
-                // optional filter like a range
-                if (filter != null)
-                {
-                    objs = objs.Where(filter);
-                }
+        //        // optional filter like a range
+        //        if (filter != null)
+        //        {
+        //            objs = objs.Where(filter);
+        //        }
 
-                if (map != null)
-                {
-                    return objs.Select(map);
-                }
+        //        if (map != null)
+        //        {
+        //            return objs.Select(map);
+        //        }
 
-                // look i trust you you decide to let this happen
-                // if you screw up it will error so you'll know
-                return (IEnumerable<R>)objs;
-            }
-            catch (Exception e)
-            {
-                if (Program.Employee == 2)
-                {
-                    Console.WriteLine(e.Message);
-                }
-                return new R[] { };
-            }
-        }
+        //        // look i trust you you decide to let this happen
+        //        // if you screw up it will error so you'll know
+        //        return (IEnumerable<R>)objs;
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        if (Program.Employee == 2)
+        //        {
+        //            Console.WriteLine(e.Message);
+        //        }
+        //        return new R[] { };
+        //    }
+        //}
 
-        public static bool Set<T>(IEnumerable<T> items)
-        {
-            try
-            {
-                var iob = new IOBoundary(GetModelName<T>());
+        //public static bool Set<T>(IEnumerable<T> items)
+        //{
+        //    try
+        //    {
+        //        var iob = new IOBoundary(GetModelName<T>());
 
-                iob.Clear();
+        //        iob.Clear();
 
-                IEnumerable<string> lines = items.Select(i => JsonConvert.SerializeObject(i));
+        //        IEnumerable<string> lines = items.Select(i => JsonConvert.SerializeObject(i));
 
-                iob.Write(lines);
+        //        iob.Write(lines);
 
-                return true;
-            }
-            catch (Exception e)
-            {
-                if (Program.Employee == 2)
-                {
-                    Console.WriteLine(e.Message);
-                }
-                return false;
-            }       
-        }
+        //        return true;
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        if (Program.Employee == 2)
+        //        {
+        //            Console.WriteLine(e.Message);
+        //        }
+        //        return false;
+        //    }       
+        //}
         
-        // this is more of an update command
-        public static bool Set<T, TOrderBy>(Func<T, bool> filter = null, Func<T, T> update = null, Func<T, TOrderBy> order = null)
-        {
-            try
-            {
-                IEnumerable<T> items = Enumerable.Empty<T>();
+        //// this is more of an update command
+        //public static bool Set<T, TOrderBy>(Func<T, bool> filter = null, Func<T, T> update = null, Func<T, TOrderBy> order = null)
+        //{
+        //    try
+        //    {
+        //        IEnumerable<T> items = Enumerable.Empty<T>();
                 
-                Func<T, bool> noFilter = x => true;
-                Func<T, T> noUpdate = x => x;
+        //        Func<T, bool> noFilter = x => true;
+        //        Func<T, T> noUpdate = x => x;
 
-                var _filter = filter ?? noFilter;
-                var _update = update ?? noUpdate;
+        //        var _filter = filter ?? noFilter;
+        //        var _update = update ?? noUpdate;
 
-                items = items.Concat(Get<T, T>(_filter, _update));
+        //        items = items.Concat(Get<T, T>(_filter, _update));
 
-                var iob = new IOBoundary(GetModelName<T>());
+        //        var iob = new IOBoundary(GetModelName<T>());
 
-                items = items.Union(Get<T>(t => !_filter(t))).OrderBy(order);
+        //        items = items.Union(Get<T>(t => !_filter(t))).OrderBy(order);
 
-                iob.Write(items.Select(i => JsonConvert.SerializeObject(i)));
+        //        iob.Write(items.Select(i => JsonConvert.SerializeObject(i)));
 
-                return true;
-            }
-            catch (Exception e)
-            {
-                if (Program.Employee == 2)
-                {
-                    Console.WriteLine(e);
-                }
-                return false;
-            }
-        }
+        //        return true;
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        if (Program.Employee == 2)
+        //        {
+        //            Console.WriteLine(e);
+        //        }
+        //        return false;
+        //    }
+        //}
 
-        public static bool Add<T, TOrderBy>(IEnumerable<T> items, Func<T, TOrderBy> order = null)
-        {
-            try 
-            {
-                // filter out any items that should be removed during this
-                // IEnumerable<T> currentItems = Get<T>();
+        //public static bool Add<T, TOrderBy>(IEnumerable<T> items, Func<T, TOrderBy> order = null)
+        //{
+        //    try 
+        //    {
+        //        // filter out any items that should be removed during this
+        //        // IEnumerable<T> currentItems = Get<T>();
 
-                // currentItems.Union(items);
-                // add currently stored files to items
-                items = items.Concat(Get<T>());
+        //        // currentItems.Union(items);
+        //        // add currently stored files to items
+        //        items = items.Concat(Get<T>());
 
-                if (order != null)
-                {
-                    items.OrderBy(order);
-                }
+        //        if (order != null)
+        //        {
+        //            items.OrderBy(order);
+        //        }
 
-                var iob = new IOBoundary(GetModelName<T>());
+        //        var iob = new IOBoundary(GetModelName<T>());
                 
-                iob.Write(items.Select(i => JsonConvert.SerializeObject(i)));
+        //        iob.Write(items.Select(i => JsonConvert.SerializeObject(i)));
                 
-                return true;
-            }
-            catch (Exception e)
-            {
-                if (Program.Employee == 2)
-                {
-                    Console.WriteLine(e);
-                }
-                return false;
-            }
-        }
-        protected virtual void Dispose(bool disposing)
-        {
+        //        return true;
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        if (Program.Employee == 2)
+        //        {
+        //            Console.WriteLine(e);
+        //        }
+        //        return false;
+        //    }
+        //}
+        //protected virtual void Dispose(bool disposing)
+        //{
 
-        }
-        public void Dispose()
-        {
-            // Dispose of unmanaged resources.
-            Dispose(true);
-            // Suppress finalization.
-            GC.SuppressFinalize(this);
-        }
-        #endregion
+        //}
+        //public void Dispose()
+        //{
+        //    // Dispose of unmanaged resources.
+        //    Dispose(true);
+        //    // Suppress finalization.
+        //    GC.SuppressFinalize(this);
+        //}
+        //#endregion
 
     }
 
@@ -238,6 +238,8 @@ namespace Oasis.IO
 
     public class DAL : IDAL
     {
+        // todo see theres a way to key on a serialized object so then we dont have to convert each 
+        // object to check it against the filter
         public DAL() { }
 
         public bool Create<T>(IEnumerable<T> items)
@@ -336,6 +338,7 @@ namespace Oasis.IO
             }
         }
 
+        // todo make so that update takes a return void update method which is calls from the Func<T, T>
         public bool Update<T>(Func<T, T> update, Func<T, bool> filter = null)
         {
             try

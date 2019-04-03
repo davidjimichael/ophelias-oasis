@@ -9,7 +9,7 @@ namespace Oasis
     public class Hotel
     {
         private int nextId;
-        private DAL dal;
+        private IDAL dal;
         // room count
         // defaults etc....
 
@@ -23,8 +23,9 @@ namespace Oasis
         public bool Reset()
         {
             dal.Delete<Reservation>();
+            dal.Delete<CreditCard>();
 
-            return dal.Update<Day>(
+            bool updated = dal.Update<Day>(
                 update: day =>
                 {
                     day.Rooms = day.Rooms.Select(r => new Room()).ToArray();
@@ -32,7 +33,7 @@ namespace Oasis
                     return day;
                 });
 
-
+            return updated;
             //try
             //{
                 //var days = IOBoundary.Get<Day
@@ -197,16 +198,36 @@ namespace Oasis
             // update both report success status
             // todo fix error where days are set only to reset days
             //return IOBoundary.Set<Day>(days) && IOBoundary.Set<Reservation>(res);
-            return false;
+            // return false;
         }
 
         public bool AddCreditCard(int resId, CreditCard card)
         {
+            if (resId < 0)
+            {
+                // invalid id 
+                return false;
+            }
+
             // check red id has card
-            card.ResId = resId;
-            // check card is valid
-            // lowkey lets just set the card id to the res id
-            return dal.Create<CreditCard>(new[] { card });
+            Reservation res = dal.Read<Reservation>(r => r.Id == resId).FirstOrDefault();
+
+            if (res == null)
+            {
+                // unable to find reservation
+                return false;
+            }
+
+            if (!card.IsValid())
+            {
+                // credit card is invalid by its own definition 
+                return false;
+            }
+
+            // attach this card to the reservation
+            card.ResId = res.Id;
+            
+            return dal.Create(new[] { card });
         }
 
         public bool BookReservation(string name, string email, DateTime start, DateTime end)
@@ -219,18 +240,19 @@ namespace Oasis
 
             // need to set the reservation base rates and  what not 
             var res = new Reservation(this.nextId++, name, email, start, end);
-            
+
             // create filters for daterange and room availibility
             Func<Day, bool> _withinDateRange = d => start <= d.Date && d.Date <= end;
             Func<Day, bool> _hasOpenRoom = d => d.Rooms.Any(r => r.IsOpen);
             Func<Day, bool> _filter = d => _hasOpenRoom(d) && _withinDateRange(d);
             // todo add the functionality so a reservation thats attempted for a un saved base rate date is then added
 
-            var days = IOBoundary.Get<Day>(_filter);
+            // var days = IOBoundary.Get<Day>(_filter);
+            IEnumerable<Day> days = dal.Read<Day>(_filter);
             // the below line should be part of the reservation constructor...
             //var baseRates = days.Select(d => d.Rate);
             // add one to compensate for exclusive vs inclusive inequalities in date comparison 
-            if (days.Count() != (end-start).Days + 1) 
+            if (days.Count() != (end - start).Days + 1)
             {
                 // not enough rooms availible for length of reservation
                 return false;
@@ -246,7 +268,7 @@ namespace Oasis
 
             // insert the reservation into the same room (by number) across all days of the stay
             // loop over each day of the reservation
-            for (int i =  0; i < days.Count(); i++)
+            for (int i = 0; i < days.Count(); i++)
             {
                 var day = days.ElementAt(i);
 
@@ -275,19 +297,25 @@ namespace Oasis
             // }
             // 
             //IOBoundary.Set<Day>()
-            IOBoundary.Set<Day, DateTime>(
-                _filter,
-                update: d => 
-                {
-                    d.Rooms[roomNumber].ResId = res.Id;
-                    return d;
-                },
-                order: d => d.Date);
+            //IOBoundary.Set<Day, DateTime>(
+            //    _filter,
+            //    update: d =>
+            //    {
+            //        d.Rooms[roomNumber].ResId = res.Id;
+            //        return d;
+            //    },
+            //    order: d => d.Date);
 
-            IOBoundary.Add<Reservation, int>(
-                items: new Reservation[] { res },
-                order: r => r.Id);
-            //dal.Create(new[] { res }, orderBy: r => r.Id);
+            dal.Update(day =>
+            {
+                day.Rooms[roomNumber].ResId = res.Id;
+                return day;
+            }, _filter);
+
+            //IOBoundary.Add<Reservation, int>(
+            //    items: new [] { res },
+            //    order: r => r.Id);
+            dal.Create(new[] { res }, orderBy: r => r.Id);
             // todo set the updated days
             // throw new NotImplementedException();
             return true;

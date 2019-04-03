@@ -71,6 +71,7 @@
     <Folder Include="UI\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="IO\creditcards.txt" />
     <Content Include="IO\days.txt" />
     <Content Include="IO\reservations.txt" />
   </ItemGroup>

@@ -8,21 +8,36 @@ using System.Threading.Tasks;
 
 namespace Oasis.Models
 {
+    public enum ReservationType
+    {
+        SixtyDay,
+        Conventional,
+        Prepaid,
+        Incentive,
+    }
+
     public class Reservation
     {
         public string Name;
         public string Email;
         public DateTime Start;
         public DateTime End;
+        public DateTime? CheckIn;
         public readonly int Id;
+        public int Penalty;
+        public ReservationType Type;
 
-        public Reservation(int id, string name, string email, DateTime start, DateTime end)
+        // todo remove default reservation type parameter
+        public Reservation(int id, string name, string email, DateTime start, DateTime end, ReservationType type = ReservationType.Conventional)
         {
             Id = id;
             Name = name;
             Email = email;
             Start = start;
             End = end;
+            Penalty = 0;
+            // todo add validation on creating a reservation with prepaid types at certain number of days away from start. 
+            Type = type;
         }
     }
 }

@@ -1,6 +1,9 @@
-﻿using Oasis.IO;
+﻿using Newtonsoft.Json;
+using Oasis.IO;
 using Oasis.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Oasis
 {
@@ -21,19 +24,21 @@ namespace Oasis
                 while (!input.StartsWith("Q") && !input.StartsWith("q"))
                 {
                     input = Console.ReadLine();
-
-                    // todo add help with
-                    // user <int>
+                    
                     if (input.StartsWith("help")) // dont add a space its the only command in the line
                     {
+                        // consider this grouping my only documentation for rn
                         Console.WriteLine("Command List:");
                         Console.WriteLine("user <login> <userId>");
                         Console.WriteLine("user <logout>");
                         Console.WriteLine("user display");
                         Console.WriteLine("rate set <startdate> <enddate> <rate>");
+                        Console.WriteLine("admin reset");
+                        Console.WriteLine("admin daily");
                         Console.WriteLine("res create <name> <email> <startdate> <enddate>");
                         Console.WriteLine("res change <id> <startdate> <enddate>");
                         Console.WriteLine("res cancel <id>");
+                        Console.WriteLine("res list <startdate> <enddate>");
                         Console.WriteLine("res card <id> <name> <card_number> <exp> <cvc> <address> <city> <state> <zip>");
                     }
                     else if (input.StartsWith("user "))
@@ -138,17 +143,38 @@ namespace Oasis
                                 Console.WriteLine(added);
                             }
                         }
+                        else if (toks.Length == 4)
+                        {
+                            if (Employee != -1 && toks[1].Equals("list"))
+                            {
+                                // res list <startdate> <enddate>
+                                DateTime start = DateTime.TryParse(toks[2], out var s) ? s : DateTime.Now;
+                                DateTime end = DateTime.TryParse(toks[3], out var e) ? e : DateTime.Now;
+
+                                IEnumerable<Reservation> reservations = OpheliasOasis.GetReservationsDuring(start, end);
+
+                                foreach (Reservation res in reservations)
+                                {
+                                    Console.WriteLine(JsonConvert.SerializeObject(res));
+                                }
+                                Console.WriteLine(reservations.Count() > 0);
+                            }
+                        }
                     }
-                    else if (input.StartsWith("reset "))
+                    else if (input.StartsWith("admin "))
                     {
                         var toks = input.Split(' ');
 
                         if (toks.Length == 2)
                         {
-                            if (Employee == 2 && toks[1].Equals("hotel"))
+                            if (Employee == 2 && toks[1].Equals("reset"))
                             {
                                 var reset = OpheliasOasis.Reset();
                                 Console.WriteLine(reset);
+                            }
+                            else if (Employee == 2 && toks[1].Equals("daily"))
+                            {
+                                OpheliasOasis.TriggerDailyActivities();
                             }
                         }
                     }                       

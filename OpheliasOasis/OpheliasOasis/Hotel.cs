@@ -3,29 +3,65 @@ using Oasis.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Oasis
 {
     public class Hotel
     {
-        private int nextId;
-        private IDAL dal;
+        private int NextId;
+        private IDAL Dal;
+        private Timer Timer;
+        private static readonly int LATE_CHECK_IN_PENALTY = 10;
         // room count
         // defaults etc....
 
         public Hotel()
         {
             // todo make sure to set nextId to the current max id value + 1
-            nextId = 0;
-            dal = new DAL();
+            NextId = 0;
+            Dal = new DAL();
+            // todo - there are 86400000 milliseconds in one day uncomment this and change the value
+            // timer = new Timer(DailyActivities, null, 0, 86400000);
+        }
+
+        // todo remove after testing
+        public void TriggerDailyActivities()
+        {
+            DailyActivities(null);
+        }
+
+        private void DailyActivities(object state)
+        {
+            if (Program.Employee == 2)
+            {
+                Console.WriteLine("Tick: {0}, Timer State: {1}", DateTime.Now, state);
+            }
+            // get all current reservations split by if they are checked in
+            var reservations = Dal.Read<Reservation>();
+            //var bookedReservations = reservations.Where(r => r.CheckIn == null);
+            //var checkedInReservations = reservations.Where(r => r.CheckIn != null);
+            // perform daily activities for each booked not checked in reservation
+
+            // it is after reservation start and the guest has not check in.
+            Func<Reservation, bool> _isLateCheckIn = r => r.CheckIn == null && r.Start < DateTime.Now;
+            Func<Reservation, Reservation> _addPenalty = r =>
+            {
+                r.Penalty += LATE_CHECK_IN_PENALTY;
+                return r;
+            };
+
+            Dal.Update<Reservation>(_addPenalty, _isLateCheckIn);
+
+            // todo add sixty day penalities and reminder emails
         }
 
         public bool Reset()
         {
-            dal.Delete<Reservation>();
-            dal.Delete<CreditCard>();
+            Dal.Delete<Reservation>();
+            Dal.Delete<CreditCard>();
 
-            bool updated = dal.Update<Day>(
+            bool updated = Dal.Update<Day>(
                 update: day =>
                 {
                     day.Rooms = day.Rooms.Select(r => new Room()).ToArray();
@@ -99,10 +135,10 @@ namespace Oasis
                 return start <= day.Date && day.Date <= end;
             };
 
-            IEnumerable<Day> prev = dal.Read<Day>(_filter);
+            IEnumerable<Day> prev = Dal.Read<Day>(_filter);
 
             // update all current days baserates
-            var updated = dal.Update<Day>(
+            var updated = Dal.Update<Day>(
                update: day =>
                {
                    day.Rate = rate;
@@ -136,10 +172,23 @@ namespace Oasis
                     }
                 }
 
-                return dal.Create<Day, DateTime>(toAdd, orderBy: day => day.Date);
+                return Dal.Create<Day, DateTime>(toAdd, orderBy: day => day.Date);
             }
 
             return true;
+        }
+
+        /// <summary>
+        ///     Return reservations that start within or on this timeframe
+        /// </summary>
+        public IEnumerable<Reservation> GetReservationsDuring(DateTime start, DateTime? end = null)
+        {
+            if (end == null)
+            {
+                end = start;
+            }
+            return Dal.Read<Reservation>(filter: r => start <= r.Start && r.End <= end);
+            //return dal.Read<Reservation>(filter: r => start <= r.Start && r.Start <= end);
         }
 
         public bool CancelReservation(int id)
@@ -151,7 +200,7 @@ namespace Oasis
             }
             // get all reservations to save
             // var reservations = IOBoundary.Get<Reservation>(filter: r => r.Id != id);
-            var res = dal.Read<Reservation>(filter: r => r.Id == id).FirstOrDefault();
+            var res = Dal.Read<Reservation>(filter: r => r.Id == id).FirstOrDefault();
 
             if (res == null)
             {
@@ -159,7 +208,7 @@ namespace Oasis
                 return false;
             }
 
-            bool updated = dal.Update<Day>(
+            bool updated = Dal.Update<Day>(
                 update: day =>
                 {
                     for (int i = 0; i < day.Rooms.Length; i++)
@@ -173,7 +222,7 @@ namespace Oasis
                 });
             
             // return that one reservation is deleted
-            bool deleted = dal.Delete<Reservation>(filter: r => r.Id == id).Count() == 1;
+            bool deleted = Dal.Delete<Reservation>(filter: r => r.Id == id).Count() == 1;
 
             return updated && deleted;
             // get all days within this daterange
@@ -210,7 +259,7 @@ namespace Oasis
             }
 
             // check red id has card
-            Reservation res = dal.Read<Reservation>(r => r.Id == resId).FirstOrDefault();
+            Reservation res = Dal.Read<Reservation>(r => r.Id == resId).FirstOrDefault();
 
             if (res == null)
             {
@@ -227,7 +276,7 @@ namespace Oasis
             // attach this card to the reservation
             card.ResId = res.Id;
             
-            return dal.Create(new[] { card });
+            return Dal.Create(new[] { card });
         }
 
         public bool BookReservation(string name, string email, DateTime start, DateTime end)
@@ -238,8 +287,8 @@ namespace Oasis
             //     return false;
             // }
 
-            // need to set the reservation base rates and  what not 
-            var res = new Reservation(this.nextId++, name, email, start, end);
+            // todo need to set the reservation base rates and  what not 
+            var res = new Reservation(NextId++, name, email, start, end);
 
             // create filters for daterange and room availibility
             Func<Day, bool> _withinDateRange = d => start <= d.Date && d.Date <= end;
@@ -248,7 +297,7 @@ namespace Oasis
             // todo add the functionality so a reservation thats attempted for a un saved base rate date is then added
 
             // var days = IOBoundary.Get<Day>(_filter);
-            IEnumerable<Day> days = dal.Read<Day>(_filter);
+            IEnumerable<Day> days = Dal.Read<Day>(_filter);
             // the below line should be part of the reservation constructor...
             //var baseRates = days.Select(d => d.Rate);
             // add one to compensate for exclusive vs inclusive inequalities in date comparison 
@@ -306,7 +355,7 @@ namespace Oasis
             //    },
             //    order: d => d.Date);
 
-            dal.Update(day =>
+            Dal.Update(day =>
             {
                 day.Rooms[roomNumber].ResId = res.Id;
                 return day;
@@ -315,7 +364,7 @@ namespace Oasis
             //IOBoundary.Add<Reservation, int>(
             //    items: new [] { res },
             //    order: r => r.Id);
-            dal.Create(new[] { res }, orderBy: r => r.Id);
+            Dal.Create(new[] { res }, orderBy: r => r.Id);
             // todo set the updated days
             // throw new NotImplementedException();
             return true;
@@ -329,7 +378,7 @@ namespace Oasis
                 return false;
             }
 
-            var reservation = dal.Read<Reservation>(filter: r => r.Id == id).FirstOrDefault();
+            var reservation = Dal.Read<Reservation>(filter: r => r.Id == id).FirstOrDefault();
 
             if (reservation == null)
             {

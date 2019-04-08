@@ -9,11 +9,11 @@ namespace Oasis.Models
     {
         public DateTime Date;
         public Room[] Rooms;
-        public int Rate;
+        public double Rate;
         public static readonly int DEFAULT_RATE = 100;
         public static readonly int DEFAULT_ROOM_COUNT = 45;
 
-        public Day(DateTime date, Room[] rooms = null, int rate = 0)
+        public Day(DateTime date, Room[] rooms = null, double rate = 0)
         {
             Date = date;
 

@@ -72,7 +72,7 @@ namespace Oasis
                         {
                             if ((Employee == 1 || Employee == 2) && toks[1].Equals("set"))
                             {
-                                var rate = int.TryParse(toks[4], out int r) ? r : -1; // -1 causes booking to fail
+                                var rate = double.TryParse(toks[4], out double r) ? r : -1; // -1 causes booking to fail
                                 var start = DateTime.TryParse(toks[2], out DateTime s) ? s : DateTime.Now;
                                 var end = DateTime.TryParse(toks[3], out DateTime e) ? e : DateTime.Now.AddDays(1); // prevent error end < start
 

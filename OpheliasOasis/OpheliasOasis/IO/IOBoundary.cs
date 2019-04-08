@@ -225,8 +225,7 @@ namespace Oasis.IO
 
     }
 
-        #region newstuff
-
+    #region newstuff
     interface IDAL
     {
         bool Create<T>(IEnumerable<T> items);
@@ -274,6 +273,41 @@ namespace Oasis.IO
                 }
                 return false;
             }
+        }
+
+        public IEnumerable<T> _Delete<T>(Func<T, bool> filter = null)
+        {
+            try
+            {
+                IOBoundary iob = IOBoundary.Create<T>();
+                IEnumerable<T> prev = iob.Read().Select(line => JsonConvert.DeserializeObject<T>(line));
+
+                if (filter != null)
+                {
+                    prev = prev.Where(filter);
+                }
+
+                prev.Select(p => DeleteRecord(p));
+
+                return prev;
+            }
+            catch (Exception e)
+            {
+                if (Program.Employee == 2)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                return Enumerable.Empty<T>();
+            }
+        }
+
+        private T DeleteRecord<T>(T p)
+        {
+            if (p is Reservation res)
+            {
+                res.Status = ReservationStatus.Cancelled;
+            }
+            throw new NotImplementedException();
         }
 
         public IEnumerable<T> Delete<T>(Func<T, bool> filter = null)

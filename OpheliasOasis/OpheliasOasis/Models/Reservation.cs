@@ -8,6 +8,15 @@ using System.Threading.Tasks;
 
 namespace Oasis.Models
 {
+    public enum ReservationStatus
+    {
+        Active,
+        //CheckedIn,
+        //CheckedOut,
+        Changed,
+        Cancelled,
+    }
+    // we're keeping this around because subclassing is more complicated and with our time span im not feeling it
     public enum ReservationType
     {
         SixtyDay,
@@ -23,21 +32,79 @@ namespace Oasis.Models
         public DateTime Start;
         public DateTime End;
         public DateTime? CheckIn;
+        public DateTime? CheckOut;
+        public DateTime? Paid;
         public readonly int Id;
         public int Penalty;
+        public double[] BaseRates;
+        public double Multiplier;
         public ReservationType Type;
+        public ReservationStatus Status;
+        public bool IsNoShow
+        {
+            get
+            {
+                return IsNoShow;
+            }
+            
+            set
+            {
+                // prevents double charging
+                if (!this.IsNoShow)
+                {
+                    this.IsNoShow = value;
+
+                    if (this.IsNoShow)
+                    {
+                        this.Penalty += Hotel.LATE_CHECK_IN_PENALTY;
+                    }
+                }
+            }
+        }
 
         // todo remove default reservation type parameter
         public Reservation(int id, string name, string email, DateTime start, DateTime end, ReservationType type = ReservationType.Conventional)
         {
+            if (id < 0)
+            {
+                throw new ArgumentOutOfRangeException("Reservation Id cannot be negative");
+            }
+
+            // get baserates for length of stay
+            var rates = new DAL().Read<Day>(filter: d => start <= d.Date && d.Date <= end)
+                .Select(d => d.Rate)
+                .ToArray();
+
             Id = id;
             Name = name;
             Email = email;
             Start = start;
             End = end;
             Penalty = 0;
+            BaseRates = rates;
             // todo add validation on creating a reservation with prepaid types at certain number of days away from start. 
             Type = type;
+            Status = ReservationStatus.Active;
+            Multiplier = GetMultiplier(type);
+        }
+
+
+        private static double GetMultiplier(ReservationType type)
+        {
+            // todo change these to represent accurate multipliers
+            switch (type)
+            {
+                case ReservationType.Conventional:
+                    return 1;
+                case ReservationType.Prepaid:
+                    return 0.75;
+                case ReservationType.SixtyDay:
+                    return 0.85;
+                case ReservationType.Incentive:
+                    return 1; // todo incentive calculation here
+                default:
+                    throw new NotImplementedException("Unknown ReservationType: " + type);
+            }
         }
     }
 }

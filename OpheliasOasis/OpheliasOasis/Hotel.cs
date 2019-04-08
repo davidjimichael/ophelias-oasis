@@ -1,5 +1,6 @@
 ﻿using Oasis.IO;
 using Oasis.Models;
+using OpheliasOasis.Reports;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,9 +11,9 @@ namespace Oasis
     public class Hotel
     {
         private int NextId;
-        private IDAL Dal;
+        private static IDAL Dal;
         private Timer Timer;
-        private static readonly int LATE_CHECK_IN_PENALTY = 10;
+        public static readonly int LATE_CHECK_IN_PENALTY = 10;
         // room count
         // defaults etc....
 
@@ -35,25 +36,38 @@ namespace Oasis
         {
             if (Program.Employee == 2)
             {
-                Console.WriteLine("Tick: {0}, Timer State: {1}", DateTime.Now, state);
+                Console.WriteLine("Tick: {0}, Timer State: {1}", DateTime.Now, state ?? "null");
             }
+            // todo add the backup files part here
+
+            // charge late penalties for no shows
+            Func<Reservation, bool> _isLateCheckIn = r => r.CheckIn == null && r.Start < DateTime.Now;
+            Func<Reservation, Reservation> _addPenalty = r =>
+            {
+                // already charged late check in penalty (if theyre two days late) just dont charge them a second time
+                if (r.Penalty > 0)
+                {
+                    r.Penalty += LATE_CHECK_IN_PENALTY;
+                }
+                return r;
+            };
+
+            Dal.Update<Reservation>(_addPenalty, _isLateCheckIn);
             // get all current reservations split by if they are checked in
-            var reservations = Dal.Read<Reservation>();
             //var bookedReservations = reservations.Where(r => r.CheckIn == null);
             //var checkedInReservations = reservations.Where(r => r.CheckIn != null);
             // perform daily activities for each booked not checked in reservation
 
             // it is after reservation start and the guest has not check in.
-            Func<Reservation, bool> _isLateCheckIn = r => r.CheckIn == null && r.Start < DateTime.Now;
-            Func<Reservation, Reservation> _addPenalty = r =>
-            {
-                r.Penalty += LATE_CHECK_IN_PENALTY;
-                return r;
-            };
-
-            Dal.Update<Reservation>(_addPenalty, _isLateCheckIn);
 
             // todo add sixty day penalities and reminder emails
+            // read all reservations in "again"
+            var reservations = Dal.Read<Reservation>();
+            
+            foreach (Reservation res in reservations)
+            {
+                PerformDailyActions(res);
+            }
         }
 
         public bool Reset()
@@ -96,7 +110,7 @@ namespace Oasis
             //}
         }
         
-        public bool SetBaseRates(DateTime start, DateTime end, int rate)
+        public bool SetBaseRates(DateTime start, DateTime end, double rate)
         {
             // add validation for changing this one year in advance
 
@@ -400,6 +414,87 @@ namespace Oasis
             }
 
             return true;
+        }
+        
+        public static double CalculateBillTotal(Reservation res)
+        {
+            return (res.Multiplier * res.BaseRates.Sum()) + res.Penalty;
+        }
+
+        public static double OccupancyRateAverage(DateTime start, DateTime end)
+        {
+            IEnumerable<double> rates = OccupancyRates(start, end);
+
+            return rates.Sum() / rates.Count();
+        }
+        
+        public static IEnumerable<double> OccupancyRates(DateTime start, DateTime end)
+        {
+            return Dal.Read<Day>(filter: d => start <= d.Date && d.Date <= end)
+                .Select(d => d.Rooms.Where(r => !r.IsOpen).Count() / (double)d.Rooms.Length);
+        }
+        
+        public static bool PerformDailyActions(Reservation res)
+        {
+            switch (res.Type)
+            {
+                case ReservationType.Conventional:
+                    return PerformDailyActionsConventional(res);
+                case ReservationType.Prepaid:
+                    return PerformDailyActionsPrepaid(res);
+                case ReservationType.SixtyDay:
+                    return PerformDailyActionsSixtyDay(res);
+                case ReservationType.Incentive:
+                    return PerformDailyActionsIncentive(res);
+                default:
+                    throw new NotImplementedException("Unknown ReservationType");
+            }
+        }
+
+        private static bool PerformDailyActionsIncentive(Reservation res)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static bool PerformDailyActionsSixtyDay(Reservation res)
+        {
+            /*
+            Forty-five days before their stay is due to begin, an
+            e-mail is sent to the guests to inform them that the reservation has to be paid in full
+            within 15 days or it will be cancelled.
+             */
+            throw new NotImplementedException();
+        }
+
+        private static bool PerformDailyActionsPrepaid(Reservation res)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        ///     Returns true for any reservations that were able to carry out thier daily tasks and are not no shows
+        /// </summary>
+        /// <param name="res"></param>
+        /// <returns></returns>
+        private static bool PerformDailyActionsConventional(Reservation res)
+        {
+            bool isNoShow = CheckIsNoShow(res);
+
+            // if cancelled 
+            switch (res.Status)
+            {
+                default: return true && !isNoShow;
+            }
+        }
+
+        public static bool CheckIsNoShow(Reservation res)
+        {
+            // past check in day and not fined already
+            if (res.Start < DateTime.Now && !res.IsNoShow)
+            {
+                res.IsNoShow = true;
+            }
+            return res.IsNoShow;
         }
     }
 }

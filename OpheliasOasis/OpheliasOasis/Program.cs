@@ -5,17 +5,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+/*
+Current Mentality: Simple and Inefficient Code with Passive-Agressive Execution
+ */
 namespace Oasis
 {
     class Program
     {
+        // unreal security measures. 
         // Developer = 2, Manager = 1, Employee = 0, Logout = -1;
         public static int Employee;
         public static Hotel OpheliasOasis;
 
         static void Main()
         {
-            Employee = -1;
+            Program.Employee = -1;
             OpheliasOasis = new Hotel();
             string input = "";
             try
@@ -24,7 +28,7 @@ namespace Oasis
                 while (!input.StartsWith("Q") && !input.StartsWith("q"))
                 {
                     input = Console.ReadLine();
-                    
+
                     if (input.StartsWith("help")) // dont add a space its the only command in the line
                     {
                         // consider this grouping my only documentation for rn
@@ -40,11 +44,12 @@ namespace Oasis
                         Console.WriteLine("res cancel <id>");
                         Console.WriteLine("res list <startdate> <enddate>");
                         Console.WriteLine("res card <id> <name> <card_number> <exp> <cvc> <address> <city> <state> <zip>");
+                        Console.WriteLine("report eor <startdate> <enddate> (Expected Occupancy Report)");
                     }
                     else if (input.StartsWith("user "))
                     {
                         var toks = input.Split(' ');
-                    
+
                         if (toks.Length == 3)
                         {
                             if (toks[1].Equals("login"))
@@ -81,8 +86,9 @@ namespace Oasis
                             }
                         }
                     }
-                    else if (input.StartsWith("res ")) {
-                
+                    else if (input.StartsWith("res "))
+                    {
+
                         var toks = input.Split(' ');
 
                         // todo add this one check
@@ -161,6 +167,22 @@ namespace Oasis
                             }
                         }
                     }
+                    else if (input.StartsWith("report "))
+                    {
+                        var toks = input.Split(' ');
+
+                        if (toks.Length == 4)
+                        {
+                            if ((Employee == 1 || Employee == 2) && toks[1].Equals("eor"))
+                            {
+                                var start = DateTime.TryParse(toks[2], out DateTime s) ? s : DateTime.Now;
+                                var end = DateTime.TryParse(toks[3], out DateTime e) ? e : DateTime.Now.AddDays(1); // prevent error end < start
+
+                                var report = OpheliasOasis.GetExpectedOcupancyReport(start, end);
+                                Console.WriteLine(string.Join("\n", report.SampleOutput));
+                            }
+                        }
+                    }
                     else if (input.StartsWith("admin "))
                     {
                         var toks = input.Split(' ');
@@ -177,7 +199,7 @@ namespace Oasis
                                 OpheliasOasis.TriggerDailyActivities();
                             }
                         }
-                    }                       
+                    }
                     else if (input.StartsWith("Q") || input.StartsWith("q"))
                     {
                         // ignore till loop skip else

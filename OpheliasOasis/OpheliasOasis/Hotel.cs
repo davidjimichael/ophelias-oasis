@@ -8,6 +8,10 @@ using System.Threading;
 
 namespace Oasis
 {
+    /// <summary>
+    ///     Handles everything, please don't remove any comments they are my make-shift reminders. Feel free to edit the code though if you introduce a bug
+    ///     Let's pretend I'm too good to do that and it's your fault, then fix it that's all I care about rn. 
+    /// </summary>
     public class Hotel
     {
         private int NextId;
@@ -84,66 +88,12 @@ namespace Oasis
                 });
 
             return updated;
-            //try
-            //{
-                //var days = IOBoundary.Get<Day
-                
-                //foreach (Day day in days)
-                //{
-                //    day.Rate = 0;
-
-                //    foreach (Room room in day.Rooms)
-                //    {
-                //        room.ResId = null;
-                //    }
-                //}
-
-                //return IOBoundary.Set<Day>(days) && IOBoundary.Set<Reservation>(new Reservation[] { });
-            //}
-            //catch (Exception e)
-            //{
-            //    if (Program.Employee == 2)
-            //    {
-            //        Console.WriteLine(e.Message);
-            //    }
-            //    return false;
-            //}
         }
         
         public bool SetBaseRates(DateTime start, DateTime end, double rate)
         {
-            // add validation for changing this one year in advance
-
-
-            /* return IOBoundary.Set<Day, DateTime>(
-                 filter: d => start <= d.Date && d.Date <= end,
-                 update: d =>
-                 {
-                     d.Rate = rate;
-                     return d;
-                 },
-                 order: d => d.Date);
-                 */
-            //var days = IOBoundary.Get<Day>(filter: d => start <= d.Date && d.Date <= end)
-            //    .Select(d => {
-            //        d.Rate = rate;
-            //        return d;
-            //    })                           
-            //    .ToList();
-
-            //int length = (end-start).Days + 1;
-
-            //for (int i = 0; i < length; i++)
-            //{
-            //    var date = start.AddDays(i);
-            //    if (!days.Any(d => d.Date == date))
-            //    {
-            //        days.Add(new Day(date, null, rate));
-            //    }
-            //}
-
-            //return IOBoundary.Set<Day>(days);
-
+            // add set for changing this one year in advance
+            
             Func<Day, bool> _filter = day =>
             {
                 return start <= day.Date && day.Date <= end;
@@ -199,10 +149,10 @@ namespace Oasis
         {
             if (end == null)
             {
+                // allows for same day reservations
                 end = start;
             }
             return Dal.Read<Reservation>(filter: r => start <= r.Start && r.End <= end);
-            //return dal.Read<Reservation>(filter: r => start <= r.Start && r.Start <= end);
         }
 
         public bool CancelReservation(int id)
@@ -239,29 +189,6 @@ namespace Oasis
             bool deleted = Dal.Delete<Reservation>(filter: r => r.Id == id).Count() == 1;
 
             return updated && deleted;
-            // get all days within this daterange
-            //var days = IOBoundary.Get<Day>(filter: d => d.Rooms.Any(r => r.ResId == id));
-
-            // reset the room occupancies 
-            //foreach (Day day in days)
-            //{
-            //    foreach (Room room in day.Rooms)
-            //    {
-            //        if (room.ResId == id)
-            //        {
-            //            room.ResId = null;
-            //        }
-            //    }
-            //}
-
-            //var dates = days.Select(d => d.Date);
-            //var unmodifiedDays = IOBoundary.Get<Day>(filter: d => !dates.Contains(d.Date));
-            //days = days.Concat(unmodifiedDays).OrderBy(d => d.Date);
-
-            // update both report success status
-            // todo fix error where days are set only to reset days
-            //return IOBoundary.Set<Day>(days) && IOBoundary.Set<Reservation>(res);
-            // return false;
         }
 
         public bool AddCreditCard(int resId, CreditCard card)
@@ -306,7 +233,7 @@ namespace Oasis
 
             // create filters for daterange and room availibility
             Func<Day, bool> _withinDateRange = d => start <= d.Date && d.Date <= end;
-            Func<Day, bool> _hasOpenRoom = d => d.Rooms.Any(r => r.IsOpen);
+            Func<Day, bool> _hasOpenRoom = d => d.Rooms.Any(r => r.IsOpen());
             Func<Day, bool> _filter = d => _hasOpenRoom(d) && _withinDateRange(d);
             // todo add the functionality so a reservation thats attempted for a un saved base rate date is then added
 
@@ -337,7 +264,7 @@ namespace Oasis
 
                 for (int j = 0; j < day.Rooms.Length; j++)
                 {
-                    if (!day.Rooms[j].IsOpen)
+                    if (!day.Rooms[j].IsOpen())
                     {
                         availibleRooms.Remove(j);
                     }
@@ -352,35 +279,15 @@ namespace Oasis
             }
 
             int roomNumber = availibleRooms.First();
-
-            // reserve room for this reservation
-            // foreach (var day in days)
-            // {
-            //     day.Rooms[roomNumber].ResId = res.Id;
-            // }
-            // 
-            //IOBoundary.Set<Day>()
-            //IOBoundary.Set<Day, DateTime>(
-            //    _filter,
-            //    update: d =>
-            //    {
-            //        d.Rooms[roomNumber].ResId = res.Id;
-            //        return d;
-            //    },
-            //    order: d => d.Date);
-
+            
             Dal.Update(day =>
             {
                 day.Rooms[roomNumber].ResId = res.Id;
                 return day;
             }, _filter);
 
-            //IOBoundary.Add<Reservation, int>(
-            //    items: new [] { res },
-            //    order: r => r.Id);
             Dal.Create(new[] { res }, orderBy: r => r.Id);
-            // todo set the updated days
-            // throw new NotImplementedException();
+            
             return true;
         }
 
@@ -409,7 +316,7 @@ namespace Oasis
 
             if (!BookReservation(reservation.Name, reservation.Email, start, end))
             {
-                // unable to book the new reservation
+                // unable to book the new reservation dates possibly due to full capacity 
                 return false;
             }
 
@@ -431,7 +338,7 @@ namespace Oasis
         public static IEnumerable<double> OccupancyRates(DateTime start, DateTime end)
         {
             return Dal.Read<Day>(filter: d => start <= d.Date && d.Date <= end)
-                .Select(d => d.Rooms.Where(r => !r.IsOpen).Count() / (double)d.Rooms.Length);
+                .Select(d => d.Rooms.Where(r => !r.IsOpen()).Count() / (double)d.Rooms.Length);
         }
         
         public static bool PerformDailyActions(Reservation res)
@@ -487,6 +394,7 @@ namespace Oasis
             }
         }
 
+        // todo move IsNoShow setting to the get for it within reservation (if this doesn't make sense to you don't worry about it this comment is purely a reminder)
         public static bool CheckIsNoShow(Reservation res)
         {
             // past check in day and not fined already
@@ -495,6 +403,16 @@ namespace Oasis
                 res.IsNoShow = true;
             }
             return res.IsNoShow;
+        }
+
+        // gotta love message passing smells
+        public ExpectedOcupancyReport GetExpectedOcupancyReport(DateTime start, DateTime end)
+        {
+            return new ExpectedOcupancyReport()
+            {
+                Start = start,
+                End = end,
+            };
         }
     }
 }

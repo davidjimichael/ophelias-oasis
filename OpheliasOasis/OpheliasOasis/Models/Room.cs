@@ -11,12 +11,9 @@ namespace Oasis.Models
             _resId = null;
         }
         
-        public bool IsOpen
+        public bool IsOpen()
         {
-            get
-            {
-                return !_resId.HasValue;
-            }
+            return !_resId.HasValue;
         }
 
         public int? ResId
@@ -29,6 +26,7 @@ namespace Oasis.Models
             {
                 if (value < 0)
                 {
+                    // normally I wouldn't set this but I feel like this is actually really imporant to not mess up.
                     throw new InvalidOperationException("Reservation Ids cannot be negative");
                 }
                 else

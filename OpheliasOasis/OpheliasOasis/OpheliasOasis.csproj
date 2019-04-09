@@ -50,22 +50,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Hotel.cs" />
+    <Compile Include="IO\DAL.cs" />
     <Compile Include="IO\IOBoundary.cs" />
     <Compile Include="Models\BaseRate.cs" />
-    <Compile Include="BusinessLogic\BaseRateScheduler.cs" />
     <Compile Include="Models\CreditCard.cs" />
     <Compile Include="Models\Day.cs" />
-    <Compile Include="Models\Employee.cs" />
-    <Compile Include="Models\ReservationDetails.cs" />
-    <Compile Include="Reports\IEnumberable.cs" />
+    <Compile Include="Reports\ExpectedOccupancyReport.cs" />
+    <Compile Include="Reports\ExpectedRoomIncomeReport.cs" />
     <Compile Include="Reports\Report.cs" />
-    <Compile Include="Schedule.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Models\Report.cs" />
     <Compile Include="Models\Reservation.cs" />
     <Compile Include="Models\Room.cs" />
-    <Compile Include="BusinessLogic\RoomScheduler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

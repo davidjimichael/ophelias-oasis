@@ -1,7 +1,4 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 
 namespace Oasis.Models
 {
@@ -10,6 +7,8 @@ namespace Oasis.Models
         public DateTime Date;
         public Room[] Rooms;
         public double Rate;
+
+        // Should these be in the Hotel class? Probably, are they? No.
         public static readonly int DEFAULT_RATE = 100;
         public static readonly int DEFAULT_ROOM_COUNT = 45;
 
@@ -17,7 +16,11 @@ namespace Oasis.Models
         {
             Date = date;
 
-            if (rooms == null)
+            if (rooms != null)
+            {
+                Rooms = rooms;
+            }
+            else
             {
                 // just make new rooms by default
                 Rooms = new Room[DEFAULT_ROOM_COUNT];
@@ -27,72 +30,10 @@ namespace Oasis.Models
                     Rooms[i] = new Room();
                 }
             }
-            else
-            {
-                Rooms = rooms;
-            }
-
 
             // if passed non positive rate reset to default rate
+            // there should be other validation for this but I need something quick and dirty
             Rate = rate > 0 ? rate : DEFAULT_RATE;
         }
-
-        //public bool HasOpenRooms()
-        //{
-        //    return GetAvailibleRooms().Count() > 0;
-        //}
-
-        //public IEnumerable<int> GetAvailibleRoomNumbers(IEnumerable<int> acceptableRooms = null)
-        //{
-        //    if (acceptableRooms == null)
-        //    {
-        //        // either check previously open rooms or start checking all of them
-        //        acceptableRooms = Rooms.Select((r, i) => i);
-                
-        //    }
-
-        //    for (int i = 0; i < Rooms.Length; i++)
-        //    {
-        //        if (!acceptableRooms.Contains(i) || !Rooms[i].IsOpen)
-        //        {
-        //            acceptableRooms.
-        //        }
-        //    }
-
-        //    return numbers;
-        //}
-
-        //public int[] GetActiveReservationIds(IEnumerable<int> acceptableRooms = null)
-        //{
-        //    return GetAvailibleRooms(acceptableRooms)
-        //        .Where(r => r.IsOpen)
-        //        .Select(r => r.ResId.Value).ToArray();
-        //}
-
-        /// <summary>
-        ///     Returns all rooms that are marked as open for this day as 
-        ///     Dictionary
-        /// </summary>
-        /// <param name="acceptableRooms">Rooms not contained here are filtered out</param>
-        /// <returns></returns>
-        //private IEnumerable<Room> GetAvailibleRooms(IEnumerable<int> acceptableRooms = null)
-        //{
-        //    if (acceptableRooms == null)
-        //    {
-        //        // all rooms acceptable
-        //        acceptableRooms = Rooms.Select((r, i) => i).ToArray();
-        //    }
-            
-        //    var rooms = new List<Room>();
-
-        //    for (int i = 0; i < Rooms.Length; i++)
-        //    {
-        //        if (acceptableRooms.Contains() && Rooms[i].IsOpen)
-        //        {
-        //            rooms.Add(Rooms[i]);
-        //        }
-        //    }
-        //    return rooms;
-        //}
     }
 }

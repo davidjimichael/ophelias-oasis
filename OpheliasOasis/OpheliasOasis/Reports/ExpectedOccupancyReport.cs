@@ -121,8 +121,8 @@ namespace OpheliasOasis.Reports
                 var avgOccupancy = new Statistic<dynamic>()
                 {
                     Name = "Average Occupancy Rate",
-                    Value = rows.Select(r => r.NumberRoomsReserved).Sum() / rows.Count(),
-                    Format = avg => string.Format("{0}%", avg),
+                    Value = rows.Select(r => r.NumberRoomsReserved).Sum() / (double)rows.Count(),
+                    Format = avg => string.Format("{0:N2}%", avg),
                 };
 
                 stats.Add(avgOccupancy);

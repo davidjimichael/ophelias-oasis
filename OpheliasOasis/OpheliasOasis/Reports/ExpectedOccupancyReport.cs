@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace OpheliasOasis.Reports
 {
-    public class OccupancyReportRow : IReportRow
+    public class ExpectedOccupancyReportRow : IReportRow
     {
         public DateTime Date { get; set; }
         public int Prepaid { get; set; }
@@ -22,7 +22,7 @@ namespace OpheliasOasis.Reports
             }
         }
 
-        public OccupancyReportRow(DateTime date)
+        public ExpectedOccupancyReportRow(DateTime date)
         {
             this.Date = date;
             this.Prepaid = 0;
@@ -32,7 +32,7 @@ namespace OpheliasOasis.Reports
         }
     }
 
-    public class ExpectedOcupancyReport : HotelReport<OccupancyReportRow>
+    public class ExpectedOcupancyReport : HotelReport<ExpectedOccupancyReportRow>
     {
         // todo decide if we want default constructors for each, I personally prefer making someone else do it. 
         //public ExpectedOcupancyReport(DateTime start, DateTime end)
@@ -40,10 +40,11 @@ namespace OpheliasOasis.Reports
         //    this.Start = start;
         //    this.End = end;
         //}
+        private IEnumerable<ExpectedOccupancyReportRow> _Rows;
 
         public override string Title => "Expected Occupancy " + base.Title;
 
-        public override IEnumerable<OccupancyReportRow> Rows
+        public override IEnumerable<ExpectedOccupancyReportRow> Rows
         {
             get
             {
@@ -54,13 +55,13 @@ namespace OpheliasOasis.Reports
                 var days = dal.Read<Day>(filter: d => Start <= d.Date && d.Date <= End);
                 var reservations = dal.Read<Reservation>(filter: r => _withinDates(r) && r.Status != ReservationStatus.Cancelled);
 
-                var rows = new List<OccupancyReportRow>();
+                var rows = new List<ExpectedOccupancyReportRow>();
 
                 for (int i = 0; i < DEFAULT_REPORT_LENGTH; i++)
                 {
                     DateTime dateTime = Start.AddDays(i);
                     Day day = days.FirstOrDefault(d => d.Date == dateTime);
-                    var row = new OccupancyReportRow(dateTime);
+                    var row = new ExpectedOccupancyReportRow(dateTime);
 
                     if (day == null)
                     {
@@ -114,10 +115,13 @@ namespace OpheliasOasis.Reports
             {
                 var stats = new List<Statistic<dynamic>>();
 
+                // I'm not sure if this is needed but it feels like it is
+                var rows = Rows;
+
                 var avgOccupancy = new Statistic<dynamic>()
                 {
                     Name = "Average Occupancy Rate",
-                    Value = Rows.Select(r => r.NumberRoomsReserved).Sum() / Rows.Count(),
+                    Value = rows.Select(r => r.NumberRoomsReserved).Sum() / rows.Count(),
                     Format = avg => string.Format("{0}%", avg),
                 };
 

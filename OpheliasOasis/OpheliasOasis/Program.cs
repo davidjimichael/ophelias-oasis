@@ -16,14 +16,14 @@ namespace Oasis
     {
         // unreal security measures. 
         // Developer = 2, Manager = 1, Employee = 0, Logout = -1;
-        public static int Employee;
-        public static Hotel OpheliasOasis;
+        public static int Employee; // mandatory field for backend logging and whatnot figured this was the easiest way to set it
+        public static Dev.Hotel OpheliasOasis;
         //public static IHotel OpheliasOasis;
 
         static void Main()
         {
             Program.Employee = -1;
-            OpheliasOasis = new Hotel();
+            OpheliasOasis = new Dev.Hotel();
             //OpheliasOasis = new Dev.Hotel(id: 0);
             string input = "";
             try
@@ -138,7 +138,7 @@ namespace Oasis
                                 // res card name num exp cvc add city state zip
                                 CreditCard card = new CreditCard
                                 {
-                                    ResId = int.TryParse(toks[2], out int id) ? id : -1,
+                                    Id = int.TryParse(toks[2], out int id) ? id : -1,
                                     Name = toks[3],
                                     Number = toks[4],
                                     Expiration = DateTime.TryParse(toks[5], out var date) ? date : DateTime.Now,
@@ -149,7 +149,7 @@ namespace Oasis
                                     Zip = toks[10],
                                 };
 
-                                var added = OpheliasOasis.AddCreditCard(card.ResId, card);
+                                var added = OpheliasOasis.AddCreditCard(card.Id, card);
                                 Console.WriteLine(added);
                             }
                         }
@@ -181,9 +181,9 @@ namespace Oasis
                             {
                                 var start = DateTime.TryParse(toks[2], out DateTime s) ? s : DateTime.Now;
                                 var end = DateTime.TryParse(toks[3], out DateTime e) ? e : DateTime.Now.AddDays(1); // prevent error end < start
-                                Console.WriteLine("broke");
-                                //var report = (ExpectedOcupancyReport)OpheliasOasis.GetExpectedOccupancyReport(start, end);
-                               // Console.WriteLine(string.Join("\n", report.SampleOutput));
+                                
+                                var report = (ExpectedOcupancyReport)OpheliasOasis.GetExpectedOccupancyReport(start, end);
+                                Console.WriteLine(string.Join("\n", report.SampleOutput));
                             }
                         }
                     }

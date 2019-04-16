@@ -12,58 +12,209 @@ namespace Oasis.Dev
     public class Hotel : Oasis.IHotel
     {
         private IO.DAL DAL;
-        private readonly int StandardDate = 100;
+        private readonly int StandardRate = 100;
         private readonly int NumRooms = 45;
-        private readonly int NextResId = 0;
+        private int NextResId = 0;
 
         public Hotel()
         {
             DAL = new IO.DAL();
 
             var today = DateTime.Now;
-            NextResId = int.Parse(string.Format("{0}{1}{2}", today.Year, today.DayOfYear, today.DayOfWeek));
+
+            NextResId = int.Parse(string.Format("{0}{1}", today.Year, today.DayOfYear));
         }
 
         public bool AddCreditCard(int resId, CreditCard card)
         {
-            throw new NotImplementedException();
+            if (resId < 0)
+            {
+                // invalid id 
+                return false;
+            }
+
+            // check red id has card
+            Reservation res = DAL.Read<Reservation>(r => r.Id == resId && r.Status == ReservationStatus.Active).FirstOrDefault();
+
+            if (res == null)
+            {
+                // unable to find reservation
+                return false;
+            }
+
+            if (!card.IsValid())
+            {
+                // credit card is invalid by its own definition 
+                return false;
+            }
+
+            // attach this card to the reservation
+            //card.ResId = res.Id;
+            card.Id = res.Id;
+
+            DAL.Update<Reservation>(update: r => 
+            {
+                r.PaymentId = card.Id;
+                return r;
+            }, 
+            filter: r => r.Id == resId);
+            
+            return DAL.Create(new[] { card });
         }
 
         public bool BookReservation(int type, DateTime start, DateTime end, string name, string email = null)
         {
-            throw new NotImplementedException();
+            return BookReservation((ReservationType)type, start, end, name, email);
         }
 
         public bool BookReservation(ReservationType type, DateTime start, DateTime end, string name, string email = null)
         {
-            throw new NotImplementedException();
-        }
+            try
+            {
+                var res = Reservation.New(NextResId++, type, start, end, name, email);
+                // create filters for daterange and room availibility
+                Func<Day, bool> _withinDateRange = d => start <= d.Date && d.Date <= end;
+                Func<Day, bool> _hasOpenRoom = d => d.Rooms.Any(r => r.IsOpen());
+                Func<Day, bool> _filter = d => _hasOpenRoom(d) && _withinDateRange(d);
+                // todo add the functionality so a reservation thats attempted for a un saved base rate date is then added
 
-        public double CalculateBillTotal(Reservation res)
-        {
-            throw new NotImplementedException();
+                // var days = IOBoundary.Get<Day>(_filter);
+                IEnumerable<Day> days = DAL.Read<Day>(_filter);
+                // the below line should be part of the reservation constructor...
+                //var baseRates = days.Select(d => d.Rate);
+                // add one to compensate for exclusive vs inclusive inequalities in date comparison 
+                if (days.Count() != (end - start).Days + 1)
+                {
+                    // not enough rooms availible for length of reservation
+                    return false;
+                }
+
+                // add all availible room numbers (assume ever room is open until proven otherwise)
+                var availibleRooms = new List<int>();
+
+                for (int i = 0; i < 45; i++)
+                {
+                    availibleRooms.Add(i);
+                }
+
+                // insert the reservation into the same room (by number) across all days of the stay
+                // loop over each day of the reservation
+                for (int i = 0; i < days.Count(); i++)
+                {
+                    var day = days.ElementAt(i);
+
+                    for (int j = 0; j < day.Rooms.Length; j++)
+                    {
+                        if (!day.Rooms[j].IsOpen())
+                        {
+                            availibleRooms.Remove(j);
+                        }
+                    }
+                }
+
+                // at this point availibleRooms will have the index (room number) of an availible room for the hotel
+                if (availibleRooms.Count() == 0)
+                {
+                    // no rooms availible for the ENTIRE length of the stay
+                    return false;
+                }
+
+                int roomNumber = availibleRooms.First();
+
+                res.Room = roomNumber;
+
+                DAL.Update(day =>
+                {
+                    day.Rooms[roomNumber].ResId = res.Id;
+                    return day;
+                }, _filter);
+
+                DAL.Create(new[] { res }, orderBy: r => r.Id);
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                if (Program.Employee == 2)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                return false;
+            }
         }
 
         public bool CancelReservation(int resId)
         {
-            throw new NotImplementedException();
+            if (resId < 0)
+            {
+                // invalid id
+                return false;
+            }
+
+            var res = DAL.Read<Reservation>(filter: r => r.Id == resId && r.Status == ReservationStatus.Active).FirstOrDefault();
+
+            if (res == null)
+            {
+                // reservation didnt exist
+                return false;
+            }
+
+            bool updatedDays = DAL.Update<Day>(
+                update: day =>
+                {
+                    for (int i = 0; i < day.Rooms.Length; i++)
+                    {
+                        if (day.Rooms[i].ResId == res.Id)
+                        {
+                            day.Rooms[i].ResId = null;
+                        }
+                    }
+                    return day;
+                });
+
+            // return that one reservation is deleted
+            //bool deleted = DAL.Delete<Reservation>(filter: r => r.Id == id).Count() == 1;
+
+            bool updatedReservation = DAL.Update<Reservation>(
+                update: r =>
+                {
+                    r.Status = ReservationStatus.Cancelled;
+                    return r;
+                },
+                filter: r => r.Id == res.Id);
+
+            return updatedDays && updatedReservation;
         }
 
         public bool ChangeReservation(int resId, DateTime start, DateTime end)
         {
-            throw new NotImplementedException();
-        }
+            if (resId < 0)
+            {
+                // invalid id 
+                return false;
+            }
 
-        public bool CheckIsNoShow(Reservation res)
-        {
-            throw new NotImplementedException();
-        }
+            var oldRes = DAL.Read<Reservation>(filter: r => r.Id == resId && r.Status == ReservationStatus.Active).FirstOrDefault();
 
-        public int CheckRefund(int resIdOrig, int resIdNew)
-        {
-            throw new NotImplementedException();
+            if (oldRes == null)
+            {
+                // unable to find reservation
+                return false;
+            }
+
+            if (!CancelReservation(oldRes.Id))
+            {
+                // unable to cancel reservation
+                return false;
+            }
+
+            var newRes = Reservation.New(NextResId++, oldRes.Type, oldRes.Start, oldRes.End, oldRes.Name, oldRes.Email, oldRes.PaymentId, changedFrom: oldRes.Id);
+
+            bool created = DAL.Create(new[] { newRes });
+
+            return created;
         }
-               
+   
         #region reports
         public IReport GetAccomodationBill(DateTime start, DateTime? end = null)
         {
@@ -122,27 +273,26 @@ namespace Oasis.Dev
 
         public IEnumerable<Reservation> GetReservationsDuring(DateTime start, DateTime? end = null)
         {
-            throw new NotImplementedException();
+            return DAL.Read<Reservation>(filter: r => !(r.End < start || end < r.Start) && r.Status == ReservationStatus.Active);
         }
 
         public bool Login(int userId)
         {
-            throw new NotImplementedException();
+            if (userId < 0)
+            {
+                return false;
+            }
+            else
+            {
+                Program.Employee = userId;
+                return true;
+            }
         }
 
         public bool Logout()
         {
-            throw new NotImplementedException();
-        }
-
-        public double OccupancyRateAverage(DateTime start, DateTime end)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<double> OccupancyRates(DateTime start, DateTime end)
-        {
-            throw new NotImplementedException();
+            Program.Employee = -1;
+            return true;
         }
 
         public bool Pay(int resId)
@@ -152,12 +302,15 @@ namespace Oasis.Dev
 
         public void TriggerDailyActivities()
         {
-            throw new NotImplementedException();
+            DailyActivities(null);
         }
 
         public void DailyActivities(object state)
         {
-            throw new NotImplementedException();
+            if (Program.Employee == 2)
+            {
+                Console.WriteLine("Tick: {0}, Timer State: {1}", DateTime.Now, state ?? "null");
+            }
         }
 
         public bool PerformDailyActions(Reservation res)
@@ -187,12 +340,23 @@ namespace Oasis.Dev
 
         public bool Reset()
         {
-            throw new NotImplementedException();
+            DAL.Delete<Reservation>();
+            DAL.Delete<CreditCard>();
+
+            bool updated = DAL.Update<Day>(
+                update: day =>
+                {
+                    day.Rooms = day.Rooms.Select(r => new Room()).ToArray();
+                    day.Rate = 0;
+                    return day;
+                });
+
+            return updated;
         }
 
         public bool SetBaseRates(DateTime start, DateTime end, double? rate = null)
         {
-            double _rate = rate ?? StandardDate;
+            double _rate = rate ?? StandardRate;
 
             IEnumerable<Day> prev = DAL.Read<Day>(d => start <= d.Date && d.Date <= end);
 
@@ -236,6 +400,89 @@ namespace Oasis.Dev
 
             return true;
         }
+
+        public bool Pay(int resId, int? amount = null)
+        {
+            if (resId < 0)
+            {
+                // invalid id
+                return false;
+            }
+
+            var res = DAL.Read<Reservation>(filter: r => r.Id == resId && r.Status == ReservationStatus.Active).FirstOrDefault();
+
+            if (res == null)
+            {
+                // reservation didnt exist
+                return false;
+            }
+
+            // they either pay a certain amount or the full amount
+            res.AmountPaid = amount ?? res.PenaltyCharge + (res.BaseRates.Sum() * res.Multiplier);
+            res.PaidOn = DateTime.Now;
+
+            return true;
+        }
+
+        public bool CheckIn(int resId)
+        {
+            if (resId < 0)
+            {
+                // invalid id
+                return false;
+            }
+
+            var res = DAL.Read<Reservation>(filter: r => r.Id == resId && r.Status == ReservationStatus.Active).FirstOrDefault();
+
+            if (res == null)
+            {
+                // reservation didnt exist
+                return false;
+            }
+
+            if (res.PaymentId == null)
+            {
+                // guest did not setup a credit card
+                return false;
+            }
+
+            res.CheckIn = DateTime.Now;
+
+            return true;
+        }
+
+        public bool CheckOut(int resId)
+        {
+            if (resId < 0)
+            {
+                // invalid id
+                return false;
+            }
+
+            var res = DAL.Read<Reservation>(filter: r => r.Id == resId && r.Status == ReservationStatus.Active).FirstOrDefault();
+
+            if (res == null)
+            {
+                // reservation didnt exist
+                return false;
+            }
+
+            if (res.CheckIn == null || res.IsNoShow)
+            {
+                // guest never arrived 
+                return false;
+            }
+
+            if (res.PaymentId == null || res.PaidOn == null)
+            {
+                // guest has not paid yet
+                return false;
+            }
+
+            res.CheckOut = DateTime.Now;
+
+            return true;
+        }
     }
 }
 
@@ -254,7 +501,9 @@ namespace Oasis
         bool ChangeReservation(int resId, DateTime start, DateTime end);
         bool CancelReservation(int resId);
         bool AddCreditCard(int resId, CreditCard card);
-        bool Pay(int resId);
+        bool Pay(int resId, int? amount = null);
+        bool CheckIn(int resId);
+        bool CheckOut(int resId);
         //int CheckRefund(int resIdOrig, int resIdNew);
         IEnumerable<Reservation> GetReservationsDuring(DateTime start, DateTime? end = null);
         
@@ -484,8 +733,15 @@ namespace Oasis
                 return false;
             }
 
+            card.Id = res.Id;
+
             // attach this card to the reservation
-            card.ResId = res.Id;
+            Dal.Update<Reservation>(r =>
+            {
+                r.PaymentId = card.Id;
+                return r;
+            },
+            filter: r => r.Id == resId);
             
             return Dal.Create(new[] { card });
         }

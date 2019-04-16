@@ -12,7 +12,8 @@ namespace Oasis.Models
     /// </summary>
     public class CreditCard : IPaymentInfo
     {
-        public int ResId;
+        public int Id;
+        //public int ResId;
         public string Name;
         public string Number;
         public DateTime Expiration;

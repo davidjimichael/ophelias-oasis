@@ -108,7 +108,7 @@ namespace Oasis.Reports
                 }
                 
                 // store to prevent double calculation
-                _Rows = rows;
+                this._Rows = rows;
 
                 return rows;
             }

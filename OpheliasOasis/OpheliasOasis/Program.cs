@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Oasis.Dev;
 using Oasis.IO;
 using Oasis.Models;
 using System;
@@ -100,7 +101,7 @@ namespace Oasis
                                 var start = DateTime.Parse(toks[4]);
                                 var end = DateTime.Parse(toks[5]);
 
-                                var booked = OpheliasOasis.BookReservation(toks[2], toks[3], start, end);
+                                var booked = OpheliasOasis.BookReservation(0, start, end, toks[2], toks[3]);
                                 Console.WriteLine(booked);
                             }
                         }

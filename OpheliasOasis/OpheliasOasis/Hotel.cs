@@ -45,18 +45,18 @@ namespace Oasis
             // todo add the backup files part here
 
             // charge late penalties for no shows
-            Func<Reservation, bool> _isLateCheckIn = r => r.CheckIn == null && r.Start < DateTime.Now;
-            Func<Reservation, Reservation> _addPenalty = r =>
+            Func<Dev.Reservation, bool> _isLateCheckIn = r => r.CheckIn == null && r.Start < DateTime.Now;
+            Func<Dev.Reservation, Dev.Reservation> _addPenalty = r =>
             {
                 // already charged late check in penalty (if theyre two days late) just dont charge them a second time
-                if (r.Penalty > 0)
+                if (r.PenaltyCharge > 0)
                 {
-                    r.Penalty += LATE_CHECK_IN_PENALTY;
+                    r.PenaltyCharge += LATE_CHECK_IN_PENALTY;
                 }
                 return r;
             };
 
-            Dal.Update<Reservation>(_addPenalty, _isLateCheckIn);
+            Dal.Update<Dev.Reservation>(_addPenalty, _isLateCheckIn);
             // get all current reservations split by if they are checked in
             //var bookedReservations = reservations.Where(r => r.CheckIn == null);
             //var checkedInReservations = reservations.Where(r => r.CheckIn != null);
@@ -66,9 +66,9 @@ namespace Oasis
 
             // todo add sixty day penalities and reminder emails
             // read all reservations in "again"
-            var reservations = Dal.Read<Reservation>();
+            var reservations = Dal.Read<Dev.Reservation>();
             
-            foreach (Reservation res in reservations)
+            foreach (Dev.Reservation res in reservations)
             {
                 PerformDailyActions(res);
             }
@@ -76,7 +76,7 @@ namespace Oasis
 
         public bool Reset()
         {
-            Dal.Delete<Reservation>();
+            Dal.Delete<Dev.Reservation>();
             Dal.Delete<CreditCard>();
 
             bool updated = Dal.Update<Day>(
@@ -145,14 +145,14 @@ namespace Oasis
         /// <summary>
         ///     Return reservations that start within or on this timeframe
         /// </summary>
-        public IEnumerable<Reservation> GetReservationsDuring(DateTime start, DateTime? end = null)
+        public IEnumerable<Dev.Reservation> GetReservationsDuring(DateTime start, DateTime? end = null)
         {
             if (end == null)
             {
                 // allows for same day reservations
                 end = start;
             }
-            return Dal.Read<Reservation>(filter: r => start <= r.Start && r.End <= end);
+            return Dal.Read<Dev.Reservation>(filter: r => start <= r.Start && r.End <= end);
         }
 
         public bool CancelReservation(int id)
@@ -163,8 +163,8 @@ namespace Oasis
                 return false;
             }
             // get all reservations to save
-            // var reservations = IOBoundary.Get<Reservation>(filter: r => r.Id != id);
-            var res = Dal.Read<Reservation>(filter: r => r.Id == id).FirstOrDefault();
+            // var reservations = IOBoundary.Get<Dev.Reservation>(filter: r => r.Id != id);
+            var res = Dal.Read<Dev.Reservation>(filter: r => r.Id == id).FirstOrDefault();
 
             if (res == null)
             {
@@ -186,7 +186,7 @@ namespace Oasis
                 });
             
             // return that one reservation is deleted
-            bool deleted = Dal.Delete<Reservation>(filter: r => r.Id == id).Count() == 1;
+            bool deleted = Dal.Delete<Dev.Reservation>(filter: r => r.Id == id).Count() == 1;
 
             return updated && deleted;
         }
@@ -200,7 +200,7 @@ namespace Oasis
             }
 
             // check red id has card
-            Reservation res = Dal.Read<Reservation>(r => r.Id == resId).FirstOrDefault();
+            Dev.Reservation res = Dal.Read<Dev.Reservation>(r => r.Id == resId).FirstOrDefault();
 
             if (res == null)
             {
@@ -220,7 +220,7 @@ namespace Oasis
             return Dal.Create(new[] { card });
         }
 
-        public bool BookReservation(string name, string email, DateTime start, DateTime end)
+        public bool BookReservation(Models.ReservationType type, DateTime start, DateTime end, string name, string email)
         {
             // todo commented out for testing purposes
             // if (start < DateTime.Now || end < start || name == "" || email == "")
@@ -229,7 +229,8 @@ namespace Oasis
             // }
 
             // todo need to set the reservation base rates and  what not 
-            var res = new Reservation(NextId++, name, email, start, end);
+            //var res = new Dev.Reservation(NextId++, name, email, start, end);
+            var res = Dev.Reservation.New(NextId++, type, start, end, name, email);
 
             // create filters for daterange and room availibility
             Func<Day, bool> _withinDateRange = d => start <= d.Date && d.Date <= end;
@@ -299,7 +300,7 @@ namespace Oasis
                 return false;
             }
 
-            var reservation = Dal.Read<Reservation>(filter: r => r.Id == id).FirstOrDefault();
+            var reservation = Dal.Read<Dev.Reservation>(filter: r => r.Id == id).FirstOrDefault();
 
             if (reservation == null)
             {
@@ -314,7 +315,7 @@ namespace Oasis
                 return false;
             }
 
-            if (!BookReservation(reservation.Name, reservation.Email, start, end))
+            if (!BookReservation(reservation.Type, start, end, reservation.Name, reservation.Email))
             {
                 // unable to book the new reservation dates possibly due to full capacity 
                 return false;
@@ -323,9 +324,9 @@ namespace Oasis
             return true;
         }
         
-        public static double CalculateBillTotal(Reservation res)
+        public static double CalculateBillTotal(Dev.Reservation res)
         {
-            return (res.Multiplier * res.BaseRates.Sum()) + res.Penalty;
+            return (res.Multiplier * res.BaseRates.Sum()) + (res.PenaltyCharge ?? 0);
         }
 
         public static double OccupancyRateAverage(DateTime start, DateTime end)
@@ -341,7 +342,7 @@ namespace Oasis
                 .Select(d => d.Rooms.Where(r => !r.IsOpen()).Count() / (double)d.Rooms.Length);
         }
         
-        public static bool PerformDailyActions(Reservation res)
+        public static bool PerformDailyActions(Dev.Reservation res)
         {
             switch (res.Type)
             {
@@ -358,12 +359,12 @@ namespace Oasis
             }
         }
 
-        private static bool PerformDailyActionsIncentive(Reservation res)
+        private static bool PerformDailyActionsIncentive(Dev.Reservation res)
         {
             throw new NotImplementedException();
         }
 
-        private static bool PerformDailyActionsSixtyDay(Reservation res)
+        private static bool PerformDailyActionsSixtyDay(Dev.Reservation res)
         {
             /*
             Forty-five days before their stay is due to begin, an
@@ -373,7 +374,7 @@ namespace Oasis
             throw new NotImplementedException();
         }
 
-        private static bool PerformDailyActionsPrepaid(Reservation res)
+        private static bool PerformDailyActionsPrepaid(Dev.Reservation res)
         {
             throw new NotImplementedException();
         }
@@ -383,7 +384,7 @@ namespace Oasis
         /// </summary>
         /// <param name="res"></param>
         /// <returns></returns>
-        private static bool PerformDailyActionsConventional(Reservation res)
+        private static bool PerformDailyActionsConventional(Dev.Reservation res)
         {
             bool isNoShow = CheckIsNoShow(res);
 
@@ -395,24 +396,21 @@ namespace Oasis
         }
 
         // todo move IsNoShow setting to the get for it within reservation (if this doesn't make sense to you don't worry about it this comment is purely a reminder)
-        public static bool CheckIsNoShow(Reservation res)
+        public static bool CheckIsNoShow(Dev.Reservation res)
         {
             // past check in day and not fined already
             if (res.Start < DateTime.Now && !res.IsNoShow)
             {
                 res.IsNoShow = true;
+                res.PenaltyCharge += LATE_CHECK_IN_PENALTY;
             }
             return res.IsNoShow;
         }
 
         // gotta love message passing smells
-        public ExpectedOcupancyReport GetExpectedOcupancyReport(DateTime start, DateTime end)
+        public ExpectedOcupancyReport GetExpectedOcupancyReport(DateTime start, DateTime? end = null)
         {
-            return new ExpectedOcupancyReport()
-            {
-                Start = start,
-                End = end,
-            };
+            return new ExpectedOcupancyReport(start, end);
         }
     }
 }

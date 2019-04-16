@@ -1,4 +1,5 @@
-﻿using Oasis.IO;
+﻿using Oasis.Dev;
+using Oasis.IO;
 using Oasis.Models;
 using System;
 using System.Collections.Generic;
@@ -111,6 +112,9 @@ namespace OpheliasOasis.Reports
 
                     rows.Add(row);
                 }
+                
+                // store to prevent double calculation
+                _Rows = rows;
 
                 return rows;
             }

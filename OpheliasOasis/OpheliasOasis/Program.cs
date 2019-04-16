@@ -196,6 +196,7 @@ namespace Oasis
                             }
                             else if (Employee == 2 && toks[1].Equals("daily"))
                             {
+                                // todo allow an optional date parameter to trigger daily events on a particular day
                                 OpheliasOasis.TriggerDailyActivities();
                             }
                         }

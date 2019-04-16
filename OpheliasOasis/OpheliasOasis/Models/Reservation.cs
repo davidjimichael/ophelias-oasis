@@ -1,6 +1,86 @@
 ﻿using Oasis.IO;
+using Oasis.Models;
 using System;
 using System.Linq;
+
+namespace Oasis.Dev
+{
+    public class Reservation
+    {
+        public int Id;
+        public int? ChangedFrom;
+        public int? PenaltyCharge;
+        public int? PaymentId;
+        public string Name;
+        public string Email;
+        public DateTime Start;
+        public DateTime End;
+        public DateTime PayBy;
+        public DateTime? CheckIn;
+        public DateTime? CheckOut;
+        public DateTime? PaidOn;
+        public double[] BaseRates;
+        public double Multiplier;
+        public Models.ReservationType Type;
+        public Models.ReservationStatus Status;
+        bool _IsNoShow;
+        
+        public static Reservation New(int id, Models.ReservationType type, DateTime start, DateTime end, string name, string email = "", int? paymentId = null, int? changedFrom = null)
+        {
+            var res = new Reservation
+            {
+                Id = id,
+                Type = type,
+                Start = start,
+                End = end,
+                Email = email,
+                Name = name,
+                ChangedFrom = changedFrom,
+                PenaltyCharge = null,
+                CheckIn = null,
+                CheckOut = null,
+                PaidOn = null,
+                PaymentId = null,
+                Status = ReservationStatus.Active,
+                _IsNoShow = start < DateTime.Now,
+                PayBy = GetPayByDate(type, start, end),
+                Multiplier = GetMultiplier(type, changedFrom),
+                BaseRates = new IO.DAL().Read<Day>(filter: d => start <= d.Date && d.Date <= end).Select(d => d.Rate).ToArray(),
+            };
+
+            return res;
+        }
+
+        private static double GetMultiplier(ReservationType type, int? changedFrom)
+        {
+            if (changedFrom != null)
+            {
+                return 1.1;
+            }
+
+            switch (type)
+            {
+                case ReservationType.Conventional: return 1;
+                case ReservationType.Prepaid: return 0.75;
+                case ReservationType.SixtyDay: return 0.85;
+                case ReservationType.Incentive: return 1; // todo incentive calculation here
+                default: throw new NotImplementedException("Unknown ReservationType: " + type);
+            }
+        }
+
+        private static DateTime GetPayByDate(ReservationType type, DateTime start, DateTime end)
+        {
+            switch (type)
+            {
+                case ReservationType.Conventional: return end;
+                case ReservationType.Incentive: return end;
+                case ReservationType.Prepaid: return start;
+                case ReservationType.SixtyDay: return start.AddDays(-30); // 30 days before start
+                default: throw new NotImplementedException("Unknown ReservationType: " + type);
+            }
+        }
+    }
+}
 
 namespace Oasis.Models
 {
@@ -28,20 +108,20 @@ namespace Oasis.Models
         public DateTime End;
         public DateTime? CheckIn;
         public DateTime? CheckOut;
-        public DateTime? Paid;
-        public readonly int Id;
+        public DateTime? PaidOn;
+        public int Id;
         public int Penalty;
         public double[] BaseRates;
         public double Multiplier;
         public ReservationType Type;
         public ReservationStatus Status;
-        private bool _IsNoShow;
+        bool _IsNoShow;
 
         public bool IsNoShow
         {
             get
             {
-                return _IsNoShow;
+                return this._IsNoShow;
             }
             
             set
@@ -89,7 +169,7 @@ namespace Oasis.Models
         }
 
 
-        private static double GetMultiplier(ReservationType type)
+        private static double GetMultiplier(ReservationType type, ReservationStatus status = ReservationStatus.Active)
         {
             // todo change these to represent accurate multipliers
             switch (type)

@@ -34,12 +34,12 @@ namespace OpheliasOasis.Reports
 
     public class ExpectedOcupancyReport : HotelReport<ExpectedOccupancyReportRow>
     {
-        // todo decide if we want default constructors for each, I personally prefer making someone else do it. 
-        //public ExpectedOcupancyReport(DateTime start, DateTime end)
-        //{
-        //    this.Start = start;
-        //    this.End = end;
-        //}
+        public ExpectedOcupancyReport(DateTime start, DateTime? end = null)
+        {
+            this.Start = start;
+            this.End = end ?? start;
+        }
+
         private IEnumerable<ExpectedOccupancyReportRow> _Rows;
 
         public override string Title => "Expected Occupancy " + base.Title;
@@ -48,6 +48,11 @@ namespace OpheliasOasis.Reports
         {
             get
             {
+                if (_Rows != null)
+                {
+                    return _Rows;
+                }
+
                 var dal = new DAL();
 
                 Func<Reservation, bool> _withinDates = r => !(r.End < Start || End < r.Start);
@@ -57,7 +62,9 @@ namespace OpheliasOasis.Reports
 
                 var rows = new List<ExpectedOccupancyReportRow>();
 
-                for (int i = 0; i < DEFAULT_REPORT_LENGTH; i++)
+                var numDays = (End - Start)?.Days + 1 ?? DEFAULT_REPORT_LENGTH;
+
+                for (int i = 0; i < numDays; i++)
                 {
                     DateTime dateTime = Start.AddDays(i);
                     Day day = days.FirstOrDefault(d => d.Date == dateTime);
@@ -122,7 +129,7 @@ namespace OpheliasOasis.Reports
                 {
                     Name = "Average Occupancy Rate",
                     Value = rows.Select(r => r.NumberRoomsReserved).Sum() / (double)rows.Count(),
-                    Format = avg => string.Format("{0:N2}%", avg),
+                    Format = avg => string.Format("{0:N2}%", (double)avg),
                 };
 
                 stats.Add(avgOccupancy);

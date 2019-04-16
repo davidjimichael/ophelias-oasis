@@ -55,8 +55,12 @@
     <Compile Include="Models\BaseRate.cs" />
     <Compile Include="Models\CreditCard.cs" />
     <Compile Include="Models\Day.cs" />
+    <Compile Include="Reports\AccomodationBill.cs" />
+    <Compile Include="Reports\DailyArrivalsReport.cs" />
+    <Compile Include="Reports\DailyOccupancyReport.cs" />
     <Compile Include="Reports\ExpectedOccupancyReport.cs" />
     <Compile Include="Reports\ExpectedRoomIncomeReport.cs" />
+    <Compile Include="Reports\IncentiveReport.cs" />
     <Compile Include="Reports\Report.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

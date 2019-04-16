@@ -35,13 +35,7 @@ namespace Oasis.Reports
 
     public class ExpectedOcupancyReport : HotelReport<ExpectedOccupancyReportRow>
     {
-        public ExpectedOcupancyReport(DateTime start, DateTime? end = null)
-        {
-            this.Start = start;
-            this.End = end ?? start;
-        }
-
-        private IEnumerable<ExpectedOccupancyReportRow> _Rows;
+        private IEnumerable<ExpectedOccupancyReportRow> _Rows { get; set; }
 
         public override string Title => "Expected Occupancy " + base.Title;
 
@@ -132,7 +126,7 @@ namespace Oasis.Reports
                 var avgOccupancy = new Statistic<dynamic>()
                 {
                     Name = "Average Occupancy Rate",
-                    Value = rows.Select(r => r.NumberRoomsReserved).Sum() / (double)rows.Count(),
+                    Value = rows.Select(r => ((ExpectedOccupancyReportRow)r).NumberRoomsReserved).Sum() / (double)rows.Count(),
                     Format = avg => string.Format("{0:N2}%", (double)avg),
                 };
 

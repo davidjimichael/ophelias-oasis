@@ -7,13 +7,245 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
+namespace Oasis.Dev
+{
+    public class Hotel : Oasis.IHotel
+    {
+        private IO.DAL DAL;
+        private readonly int StandardDate = 100;
+        private readonly int NumRooms = 45;
+        private readonly int NextResId = 0;
+
+        public Hotel()
+        {
+            DAL = new IO.DAL();
+
+            var today = DateTime.Now;
+            NextResId = int.Parse(string.Format("{0}{1}{2}", today.Year, today.DayOfYear, today.DayOfWeek));
+        }
+
+        public bool AddCreditCard(int resId, CreditCard card)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool BookReservation(int type, DateTime start, DateTime end, string name, string email = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool BookReservation(ReservationType type, DateTime start, DateTime end, string name, string email = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double CalculateBillTotal(Reservation res)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool CancelReservation(int resId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool ChangeReservation(int resId, DateTime start, DateTime end)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool CheckIsNoShow(Reservation res)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int CheckRefund(int resIdOrig, int resIdNew)
+        {
+            throw new NotImplementedException();
+        }
+               
+        #region reports
+        public IReport GetAccomodationBill(DateTime start, DateTime? end = null)
+        {
+            return new AccomodationBill
+            {
+                Start = start,
+                End = end ?? start,
+            };
+        }
+
+        public IReport GetDailyArrivalsReport(DateTime start, DateTime? end = null)
+        {
+            return new DailyArrivalsReport
+            {
+                Start = start,
+                End = end ?? start,
+            };
+        }
+
+        public IReport GetDailyOccupancyReport(DateTime start, DateTime? end = null)
+        {
+            return new DailyOccupancyReport
+            {
+                Start = start,
+                End = end ?? start,
+            };
+        }
+
+        public IReport GetExpectedOccupancyReport(DateTime start, DateTime? end = null)
+        {
+            return new ExpectedOcupancyReport
+            {
+                Start = start,
+                End = end ?? start,
+            };
+        }
+
+        public IReport GetExpectedRoomIncomeReport(DateTime start, DateTime? end = null)
+        {
+            return new ExpectedRoomIncomeReport
+            {
+                Start = start,
+                End = end ?? start,
+            };
+        }
+
+        public IReport GetIncentiveReport(DateTime start, DateTime? end = null)
+        {
+            return new IncentiveReport
+            {
+                Start = start,
+                End = end ?? start,
+            };
+        }
+        #endregion
+
+        public IEnumerable<Reservation> GetReservationsDuring(DateTime start, DateTime? end = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Login(int userId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Logout()
+        {
+            throw new NotImplementedException();
+        }
+
+        public double OccupancyRateAverage(DateTime start, DateTime end)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<double> OccupancyRates(DateTime start, DateTime end)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Pay(int resId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void TriggerDailyActivities()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DailyActivities(object state)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool PerformDailyActions(Reservation res)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool PerformDailyActionsConventional(Reservation res)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool PerformDailyActionsIncentive(Reservation res)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool PerformDailyActionsPrepaid(Reservation res)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool PerformDailyActionsSixtyDay(Reservation res)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Reset()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool SetBaseRates(DateTime start, DateTime end, double? rate = null)
+        {
+            double _rate = rate ?? StandardDate;
+
+            IEnumerable<Day> prev = DAL.Read<Day>(d => start <= d.Date && d.Date <= end);
+
+            // update all current days baserates
+            var updated = DAL.Update<Day>(
+               update: day =>
+               {
+                   day.Rate = _rate;
+                   return day;
+               },
+               filter: d => start <= d.Date && d.Date <= end);
+
+            if (!updated)
+            {
+                // failed to update current days
+                return false;
+            }
+
+            int numberOfDaysToChange = (end - start).Days;
+            if (prev.Count() < numberOfDaysToChange)
+            {
+                // we currently do not have all the baserates we need saved bc the days dont exist
+                // figure out which ones are missing from the file and then add them
+
+                List<Day> toAdd = new List<Day>();
+                var dates = prev.Select(day => day.Date);
+
+                for (int i = 0; i < numberOfDaysToChange; i++)
+                {
+                    var date = start.AddDays(i);
+
+                    if (!dates.Contains(date))
+                    {
+                        // create a new day, null out the rooms because they should not have any reservations
+                        toAdd.Add(new Day(date, null, _rate));
+                    }
+                }
+
+                return DAL.Create<Day, DateTime>(toAdd, orderBy: day => day.Date);
+            }
+
+            return true;
+        }
+    }
+}
+
 namespace Oasis
 {
     public interface IHotel {
         bool Login(int userId);
         bool Logout();
 
-        bool Reset();
+        //bool Reset();
 
         bool SetBaseRates(DateTime start, DateTime end, double? rate = null);
 
@@ -23,18 +255,17 @@ namespace Oasis
         bool CancelReservation(int resId);
         bool AddCreditCard(int resId, CreditCard card);
         bool Pay(int resId);
-        int CheckRefund(int resIdOrig, int resIdNew);
+        //int CheckRefund(int resIdOrig, int resIdNew);
         IEnumerable<Reservation> GetReservationsDuring(DateTime start, DateTime? end = null);
-
-        // These should be trigged by a timer, dont feel the need to use. 
-        void TriggerDailyActivities();
-        void DailyActivities(object state);
-        bool PerformDailyActions(Reservation res);
-        bool PerformDailyActionsIncentive(Reservation res);
-        bool PerformDailyActionsSixtyDay(Reservation res);
-        bool PerformDailyActionsPrepaid(Reservation res);
-        bool PerformDailyActionsConventional(Reservation res);
-        bool CheckIsNoShow(Reservation res);
+        
+        //void TriggerDailyActivities();
+        //void DailyActivities(object state);
+        //bool PerformDailyActions(Reservation res);
+        //bool PerformDailyActionsIncentive(Reservation res);
+        //bool PerformDailyActionsSixtyDay(Reservation res);
+        //bool PerformDailyActionsPrepaid(Reservation res);
+        //bool PerformDailyActionsConventional(Reservation res);
+        //bool CheckIsNoShow(Reservation res);
 
         IReport GetExpectedOccupancyReport(DateTime start, DateTime? end = null);
         IReport GetExpectedRoomIncomeReport(DateTime start, DateTime? end = null);
@@ -42,9 +273,9 @@ namespace Oasis
         IReport GetDailyArrivalsReport(DateTime start, DateTime? end = null);
         IReport GetDailyOccupancyReport(DateTime start, DateTime? end = null);
         IReport GetAccomodationBill(DateTime start, DateTime? end = null);
-        IEnumerable<double> OccupancyRates(DateTime start, DateTime end);
-        double OccupancyRateAverage(DateTime start, DateTime end);
-        double CalculateBillTotal(Reservation res);
+        //IEnumerable<double> OccupancyRates(DateTime start, DateTime end);
+        //double OccupancyRateAverage(DateTime start, DateTime end);
+        //double CalculateBillTotal(Reservation res);
     }
 
     /// <summary>

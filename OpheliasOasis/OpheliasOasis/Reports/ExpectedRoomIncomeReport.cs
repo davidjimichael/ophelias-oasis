@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace OpheliasOasis.Reports
+namespace Oasis.Reports
 {
     public class ExpectedRoomIncomeReportRow : IReportRow
     {

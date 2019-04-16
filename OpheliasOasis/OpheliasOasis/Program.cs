@@ -2,7 +2,7 @@
 using Oasis.Dev;
 using Oasis.IO;
 using Oasis.Models;
-using OpheliasOasis.Reports;
+using Oasis.Reports;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,12 +17,14 @@ namespace Oasis
         // unreal security measures. 
         // Developer = 2, Manager = 1, Employee = 0, Logout = -1;
         public static int Employee;
-        public static IHotel OpheliasOasis;
+        public static Hotel OpheliasOasis;
+        //public static IHotel OpheliasOasis;
 
         static void Main()
         {
             Program.Employee = -1;
             OpheliasOasis = new Hotel();
+            //OpheliasOasis = new Dev.Hotel(id: 0);
             string input = "";
             try
             {
@@ -179,9 +181,9 @@ namespace Oasis
                             {
                                 var start = DateTime.TryParse(toks[2], out DateTime s) ? s : DateTime.Now;
                                 var end = DateTime.TryParse(toks[3], out DateTime e) ? e : DateTime.Now.AddDays(1); // prevent error end < start
-
-                                var report = (ExpectedOcupancyReport)OpheliasOasis.GetExpectedOccupancyReport(start, end);
-                                Console.WriteLine(string.Join("\n", report.SampleOutput));
+                                Console.WriteLine("broke");
+                                //var report = (ExpectedOcupancyReport)OpheliasOasis.GetExpectedOccupancyReport(start, end);
+                               // Console.WriteLine(string.Join("\n", report.SampleOutput));
                             }
                         }
                     }

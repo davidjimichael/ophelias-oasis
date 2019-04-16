@@ -6,15 +6,32 @@ using System.Threading.Tasks;
 
 namespace Oasis.Reports
 {
+    //!(r.End < start || end < r.Start)
     public class DailyArrivalsReportRow : IReportRow
     {
-        public DateTime Date { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public DateTime Date { get; set; }
+
+        /// <summary>
+        ///     Leading * denotes guest leaving today.
+        /// </summary>
+        public int Room { get; set; }
+        public string Guest { get; set; }
+        public DateTime Departure { get; set; }
     }
 
     public class DailyArrivalsReport : HotelReport<DailyArrivalsReportRow>
     {
-        public override string Title => "Incentive " + base.Title;
-        public override IEnumerable<IReportRow> Rows => throw new NotImplementedException();
+        public override string Title => "Daily Arrivals " + base.Title;
+
+        private IEnumerable<IReportRow> _Rows { get; set; }
+
+        public override IEnumerable<IReportRow> Rows
+        {
+            get
+            {
+
+            }
+        }
 
         public override IEnumerable<Statistic<dynamic>> Statistics
         {

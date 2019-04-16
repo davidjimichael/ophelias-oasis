@@ -9,11 +9,32 @@ using System.Threading;
 
 namespace Oasis.Dev
 {
+    /*
+     * Disclaimer:
+     *      Yes there are two hotels. The Dev.Hotel is the new one that way I can impliment and keep track of the IHotel functions.
+     *
+     * 
+     * 
+     *
+     * Functionality to add:
+     * Prepaid can only be created 90 days in advance
+     * Refunding on all reservation types (it looks like its always 0)
+     * daily activities 
+     * incentive reservations
+     * offsite backups
+     * incentive report
+     * daily arrivals
+     * daily occupancy
+     * accomodation bills
+     * login encap inside hotel
+     * 
+     */
     public class Hotel : Oasis.IHotel
     {
         private IO.DAL DAL;
-        private readonly int StandardRate = 100;
+        private readonly double StandardRate = 100;
         private readonly int NumRooms = 45;
+        private readonly double NoShowCharge = 15;
         private int NextResId = 0;
 
         public Hotel()
@@ -178,6 +199,13 @@ namespace Oasis.Dev
             bool updatedReservation = DAL.Update<Reservation>(
                 update: r =>
                 {
+                    if (r.Start < DateTime.Now.AddDays(3))
+                    {
+                        // cancelling less than three days before start
+                        r.PenaltyCharge += NoShowCharge;
+                        r.IsNoShow = true;
+                        
+                    }
                     r.Status = ReservationStatus.Cancelled;
                     return r;
                 },

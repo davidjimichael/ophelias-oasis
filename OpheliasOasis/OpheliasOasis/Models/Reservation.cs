@@ -3,11 +3,12 @@ using Oasis.Models;
 using System;
 using System.Linq;
 
-namespace Oasis.Dev
+namespace Oasis.Models
 {
     public class Reservation
     {
         public int Id;
+        public int Room;
         public int? ChangedFrom;
         public int? PenaltyCharge;
         public int? PaymentId;
@@ -21,6 +22,7 @@ namespace Oasis.Dev
         public DateTime? PaidOn;
         public double[] BaseRates;
         public double Multiplier;
+        public double? AmountPaid;
         public Models.ReservationType Type;
         public Models.ReservationStatus Status;
         public bool IsNoShow;
@@ -40,6 +42,7 @@ namespace Oasis.Dev
                 CheckIn = null,
                 CheckOut = null,
                 PaidOn = null,
+                AmountPaid = null,
                 PaymentId = null,
                 Status = ReservationStatus.Active,
                 IsNoShow = start < DateTime.Now,

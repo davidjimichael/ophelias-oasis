@@ -1,6 +1,7 @@
 ﻿using Oasis.IO;
 using Oasis.Models;
-using OpheliasOasis.Reports;
+using Oasis.Dev;
+using Oasis.Reports;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +9,44 @@ using System.Threading;
 
 namespace Oasis
 {
+    public interface IHotel {
+        bool Login(int userId);
+        bool Logout();
+
+        bool Reset();
+
+        bool SetBaseRates(DateTime start, DateTime end, double? rate = null);
+
+        bool BookReservation(int type, DateTime start, DateTime end, string name, string email = null);
+        bool BookReservation(ReservationType type, DateTime start, DateTime end, string name, string email = null);
+        bool ChangeReservation(int resId, DateTime start, DateTime end);
+        bool CancelReservation(int resId);
+        bool AddCreditCard(int resId, CreditCard card);
+        bool Pay(int resId);
+        int CheckRefund(int resIdOrig, int resIdNew);
+        IEnumerable<Reservation> GetReservationsDuring(DateTime start, DateTime? end = null);
+
+        // These should be trigged by a timer, dont feel the need to use. 
+        void TriggerDailyActivities();
+        void DailyActivities(object state);
+        bool PerformDailyActions(Reservation res);
+        bool PerformDailyActionsIncentive(Reservation res);
+        bool PerformDailyActionsSixtyDay(Reservation res);
+        bool PerformDailyActionsPrepaid(Reservation res);
+        bool PerformDailyActionsConventional(Reservation res);
+        bool CheckIsNoShow(Reservation res);
+
+        IReport GetExpectedOccupancyReport(DateTime start, DateTime? end = null);
+        IReport GetExpectedRoomIncomeReport(DateTime start, DateTime? end = null);
+        IReport GetIncentiveReport(DateTime start, DateTime? end = null);
+        IReport GetDailyArrivalsReport(DateTime start, DateTime? end = null);
+        IReport GetDailyOccupancyReport(DateTime start, DateTime? end = null);
+        IReport GetAccomodationBill(DateTime start, DateTime? end = null);
+        IEnumerable<double> OccupancyRates(DateTime start, DateTime end);
+        double OccupancyRateAverage(DateTime start, DateTime end);
+        double CalculateBillTotal(Reservation res);
+    }
+
     /// <summary>
     ///     Handles everything, please don't remove any comments they are my make-shift reminders. Feel free to edit the code though if you introduce a bug
     ///     Let's pretend I'm too good to do that and it's your fault, then fix it that's all I care about rn. 
@@ -15,9 +54,9 @@ namespace Oasis
     public class Hotel
     {
         private int NextId;
-        private static IDAL Dal;
+        private IDAL Dal;
         private Timer Timer;
-        public static readonly int LATE_CHECK_IN_PENALTY = 10;
+        public readonly int LATE_CHECK_IN_PENALTY = 10;
         // room count
         // defaults etc....
 
@@ -36,7 +75,7 @@ namespace Oasis
             DailyActivities(null);
         }
 
-        private void DailyActivities(object state)
+        public void DailyActivities(object state)
         {
             if (Program.Employee == 2)
             {
@@ -45,8 +84,8 @@ namespace Oasis
             // todo add the backup files part here
 
             // charge late penalties for no shows
-            Func<Dev.Reservation, bool> _isLateCheckIn = r => r.CheckIn == null && r.Start < DateTime.Now;
-            Func<Dev.Reservation, Dev.Reservation> _addPenalty = r =>
+            Func<Reservation, bool> _isLateCheckIn = r => r.CheckIn == null && r.Start < DateTime.Now;
+            Func<Reservation, Reservation> _addPenalty = r =>
             {
                 // already charged late check in penalty (if theyre two days late) just dont charge them a second time
                 if (r.PenaltyCharge > 0)
@@ -56,7 +95,7 @@ namespace Oasis
                 return r;
             };
 
-            Dal.Update<Dev.Reservation>(_addPenalty, _isLateCheckIn);
+            Dal.Update<Reservation>(_addPenalty, _isLateCheckIn);
             // get all current reservations split by if they are checked in
             //var bookedReservations = reservations.Where(r => r.CheckIn == null);
             //var checkedInReservations = reservations.Where(r => r.CheckIn != null);
@@ -66,9 +105,9 @@ namespace Oasis
 
             // todo add sixty day penalities and reminder emails
             // read all reservations in "again"
-            var reservations = Dal.Read<Dev.Reservation>();
+            var reservations = Dal.Read<Reservation>();
             
-            foreach (Dev.Reservation res in reservations)
+            foreach (Reservation res in reservations)
             {
                 PerformDailyActions(res);
             }
@@ -76,7 +115,7 @@ namespace Oasis
 
         public bool Reset()
         {
-            Dal.Delete<Dev.Reservation>();
+            Dal.Delete<Reservation>();
             Dal.Delete<CreditCard>();
 
             bool updated = Dal.Update<Day>(
@@ -145,14 +184,14 @@ namespace Oasis
         /// <summary>
         ///     Return reservations that start within or on this timeframe
         /// </summary>
-        public IEnumerable<Dev.Reservation> GetReservationsDuring(DateTime start, DateTime? end = null)
+        public IEnumerable<Reservation> GetReservationsDuring(DateTime start, DateTime? end = null)
         {
             if (end == null)
             {
                 // allows for same day reservations
                 end = start;
             }
-            return Dal.Read<Dev.Reservation>(filter: r => start <= r.Start && r.End <= end);
+            return Dal.Read<Reservation>(filter: r => start <= r.Start && r.End <= end);
         }
 
         public bool CancelReservation(int id)
@@ -163,8 +202,8 @@ namespace Oasis
                 return false;
             }
             // get all reservations to save
-            // var reservations = IOBoundary.Get<Dev.Reservation>(filter: r => r.Id != id);
-            var res = Dal.Read<Dev.Reservation>(filter: r => r.Id == id).FirstOrDefault();
+            // var reservations = IOBoundary.Get<Reservation>(filter: r => r.Id != id);
+            var res = Dal.Read<Reservation>(filter: r => r.Id == id).FirstOrDefault();
 
             if (res == null)
             {
@@ -186,7 +225,7 @@ namespace Oasis
                 });
             
             // return that one reservation is deleted
-            bool deleted = Dal.Delete<Dev.Reservation>(filter: r => r.Id == id).Count() == 1;
+            bool deleted = Dal.Delete<Reservation>(filter: r => r.Id == id).Count() == 1;
 
             return updated && deleted;
         }
@@ -200,7 +239,7 @@ namespace Oasis
             }
 
             // check red id has card
-            Dev.Reservation res = Dal.Read<Dev.Reservation>(r => r.Id == resId).FirstOrDefault();
+            Reservation res = Dal.Read<Reservation>(r => r.Id == resId).FirstOrDefault();
 
             if (res == null)
             {
@@ -229,8 +268,8 @@ namespace Oasis
             // }
 
             // todo need to set the reservation base rates and  what not 
-            //var res = new Dev.Reservation(NextId++, name, email, start, end);
-            var res = Dev.Reservation.New(NextId++, type, start, end, name, email);
+            //var res = new Reservation(NextId++, name, email, start, end);
+            var res = Reservation.New(NextId++, type, start, end, name, email);
 
             // create filters for daterange and room availibility
             Func<Day, bool> _withinDateRange = d => start <= d.Date && d.Date <= end;
@@ -300,7 +339,7 @@ namespace Oasis
                 return false;
             }
 
-            var reservation = Dal.Read<Dev.Reservation>(filter: r => r.Id == id).FirstOrDefault();
+            var reservation = Dal.Read<Reservation>(filter: r => r.Id == id).FirstOrDefault();
 
             if (reservation == null)
             {
@@ -324,25 +363,25 @@ namespace Oasis
             return true;
         }
         
-        public static double CalculateBillTotal(Dev.Reservation res)
+        public double CalculateBillTotal(Reservation res)
         {
             return (res.Multiplier * res.BaseRates.Sum()) + (res.PenaltyCharge ?? 0);
         }
 
-        public static double OccupancyRateAverage(DateTime start, DateTime end)
+        public double OccupancyRateAverage(DateTime start, DateTime end)
         {
             IEnumerable<double> rates = OccupancyRates(start, end);
 
             return rates.Sum() / rates.Count();
         }
         
-        public static IEnumerable<double> OccupancyRates(DateTime start, DateTime end)
+        public IEnumerable<double> OccupancyRates(DateTime start, DateTime end)
         {
             return Dal.Read<Day>(filter: d => start <= d.Date && d.Date <= end)
                 .Select(d => d.Rooms.Where(r => !r.IsOpen()).Count() / (double)d.Rooms.Length);
         }
         
-        public static bool PerformDailyActions(Dev.Reservation res)
+        public bool PerformDailyActions(Reservation res)
         {
             switch (res.Type)
             {
@@ -359,12 +398,12 @@ namespace Oasis
             }
         }
 
-        private static bool PerformDailyActionsIncentive(Dev.Reservation res)
+        public bool PerformDailyActionsIncentive(Reservation res)
         {
             throw new NotImplementedException();
         }
 
-        private static bool PerformDailyActionsSixtyDay(Dev.Reservation res)
+        public bool PerformDailyActionsSixtyDay(Reservation res)
         {
             /*
             Forty-five days before their stay is due to begin, an
@@ -374,7 +413,7 @@ namespace Oasis
             throw new NotImplementedException();
         }
 
-        private static bool PerformDailyActionsPrepaid(Dev.Reservation res)
+        public bool PerformDailyActionsPrepaid(Reservation res)
         {
             throw new NotImplementedException();
         }
@@ -384,7 +423,7 @@ namespace Oasis
         /// </summary>
         /// <param name="res"></param>
         /// <returns></returns>
-        private static bool PerformDailyActionsConventional(Dev.Reservation res)
+        public bool PerformDailyActionsConventional(Reservation res)
         {
             bool isNoShow = CheckIsNoShow(res);
 
@@ -396,7 +435,7 @@ namespace Oasis
         }
 
         // todo move IsNoShow setting to the get for it within reservation (if this doesn't make sense to you don't worry about it this comment is purely a reminder)
-        public static bool CheckIsNoShow(Dev.Reservation res)
+        public bool CheckIsNoShow(Reservation res)
         {
             // past check in day and not fined already
             if (res.Start < DateTime.Now && !res.IsNoShow)
@@ -406,11 +445,7 @@ namespace Oasis
             }
             return res.IsNoShow;
         }
-
-        // gotta love message passing smells
-        public ExpectedOcupancyReport GetExpectedOcupancyReport(DateTime start, DateTime? end = null)
-        {
-            return new ExpectedOcupancyReport(start, end);
-        }
     }
+
+   
 }

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace OpheliasOasis.Reports
+namespace Oasis.Reports
 {
     public class ExpectedOccupancyReportRow : IReportRow
     {
@@ -45,7 +45,7 @@ namespace OpheliasOasis.Reports
 
         public override string Title => "Expected Occupancy " + base.Title;
 
-        public override IEnumerable<ExpectedOccupancyReportRow> Rows
+        public override IEnumerable<IReportRow> Rows
         {
             get
             {

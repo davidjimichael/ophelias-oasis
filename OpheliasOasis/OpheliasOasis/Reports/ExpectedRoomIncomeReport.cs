@@ -12,7 +12,7 @@ namespace OpheliasOasis.Reports
     public class ExpectedRoomIncomeReport : HotelReport<ExpectedRoomIncomeReportRow>
     {
         public override string Title => "Expected Room Income " + base.Title;
-        public override IEnumerable<ExpectedRoomIncomeReportRow> Rows => throw new NotImplementedException();
+        public override IEnumerable<IReportRow> Rows => throw new NotImplementedException();
 
         public override IEnumerable<Statistic<dynamic>> Statistics
         {

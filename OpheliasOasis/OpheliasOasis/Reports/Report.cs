@@ -4,11 +4,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace OpheliasOasis.Reports
+namespace Oasis.Reports
 {
     public interface IReportRow
     {
         DateTime Date { get; set; }
+    }
+
+    public interface IReport
+    {
+        string Title { get; }
+        IEnumerable<string> ColumnNames { get; }
+        IEnumerable<IReportRow> Rows { get; }
+        IEnumerable<Statistic<dynamic>> Statistics { get; }
     }
 
     public class Statistic<T>
@@ -18,17 +26,45 @@ namespace OpheliasOasis.Reports
         public Func<T, string> Format = null;
     }
 
-    public abstract class HotelReport<TRow>
+    public abstract class HotelReport<TRow> : IReport 
+        where TRow : IReportRow
     {
         public DateTime Start;
         public DateTime? End;
         public static readonly short DEFAULT_REPORT_LENGTH = 30;
 
-        public abstract IEnumerable<TRow> Rows { get; }
+        private IEnumerable<Models.Day> _Days;
+        private IEnumerable<Models.Reservation> _Reservations;
+        public IEnumerable<Models.Day> Days
+        {
+            get
+            {
+                if (_Days == null)
+                {
+                    _Days = new IO.DAL().Read<Models.Day>(filter: d => Start <= d.Date && d.Date <= End);
+                }
 
+                return _Days;
+            }
+        }
+        public IEnumerable<Models.Reservation> Reservations
+        {
+            get
+            {
+                if (_Reservations == null)
+                {
+                    _Reservations = new IO.DAL().Read<Models.Reservation>(filter: r =>
+                        !(r.End < Start || End < r.Start) 
+                        && r.Status == Models.ReservationStatus.Active);
+                }
+
+                return _Reservations;
+            }
+        }
+        public virtual IEnumerable<IReportRow> Rows { get; }
         public virtual IEnumerable<Statistic<dynamic>> Statistics { get; }
 
-        public IEnumerable<PropertyInfo> RowProperties
+        private IEnumerable<PropertyInfo> RowProperties
         {
             get
             {
@@ -73,6 +109,5 @@ namespace OpheliasOasis.Reports
                 return lines;
             }
         }
-
     }
 }

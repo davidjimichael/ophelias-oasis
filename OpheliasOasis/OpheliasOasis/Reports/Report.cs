@@ -41,7 +41,7 @@ namespace Oasis.Reports
             {
                 if (_Days == null)
                 {
-                    _Days = new IO.DAL().Read<Models.Day>(filter: d => Start <= d.Date && d.Date <= End);
+                    _Days = new IO.DAL().Read<Models.Day>(filter: d => Start <= d.Date && d.Date <= End).OrderBy(d => d.Date);
                 }
 
                 return _Days;

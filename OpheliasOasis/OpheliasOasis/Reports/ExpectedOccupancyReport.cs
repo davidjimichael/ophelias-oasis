@@ -114,16 +114,16 @@ namespace Oasis.Reports
             }
         }
 
-        public override IEnumerable<Statistic<dynamic>> Statistics
+        public override IEnumerable<Summary<dynamic>> Summaries
         {
             get
             {
-                var stats = new List<Statistic<dynamic>>();
+                var stats = new List<Summary<dynamic>>();
 
                 // I'm not sure if this is needed but it feels like it is
                 var rows = Rows;
 
-                var avgOccupancy = new Statistic<dynamic>()
+                var avgOccupancy = new Summary<dynamic>()
                 {
                     Name = "Average Occupancy Rate",
                     Value = rows.Select(r => ((ExpectedOccupancyReportRow)r).NumberRoomsReserved).Sum() / (double)rows.Count(),

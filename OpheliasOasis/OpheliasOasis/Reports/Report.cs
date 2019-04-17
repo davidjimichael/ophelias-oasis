@@ -16,10 +16,10 @@ namespace Oasis.Reports
         string Title { get; }
         IEnumerable<string> ColumnNames { get; }
         IEnumerable<IReportRow> Rows { get; }
-        IEnumerable<Statistic<dynamic>> Statistics { get; }
+        IEnumerable<Summary<dynamic>> Summaries { get; }
     }
 
-    public class Statistic<T>
+    public class Summary<T>
     {
         public string Name;
         public T Value;
@@ -62,7 +62,7 @@ namespace Oasis.Reports
             }
         }
         public virtual IEnumerable<IReportRow> Rows { get; }
-        public virtual IEnumerable<Statistic<dynamic>> Statistics { get; }
+        public virtual IEnumerable<Summary<dynamic>> Summaries { get; }
 
         private IEnumerable<PropertyInfo> RowProperties
         {
@@ -71,7 +71,7 @@ namespace Oasis.Reports
                 return typeof(TRow).GetProperties();
             }
         }
-
+        
         public IEnumerable<string> ColumnNames
         {
             get
@@ -104,10 +104,13 @@ namespace Oasis.Reports
                 lines.Add(Title);
                 lines.Add(String.Join(", ", ColumnNames));
                 lines.AddRange(Rows.Select(r => JsonConvert.SerializeObject(r)));
-                lines.AddRange(this.Statistics.Select(s => (string)(s.Name + ": " + s.Format(s.Value))));
+                lines.AddRange(this.Summaries.Select(s => (string)(s.Name + ": " + s.Format(s.Value))));
 
                 return lines;
             }
         }
+
+        // todo this doesnt work if end is null
+        public string Name => string.Format("Report from {0} to {1}", Start.ToShortDateString(), End?.ToShortDateString());
     }
 }

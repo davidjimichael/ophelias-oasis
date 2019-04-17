@@ -517,6 +517,14 @@ namespace Oasis.Dev
 namespace Oasis
 {
     public interface IHotel {
+
+
+        /*
+        Cameron any functions you want to build a front end on would be here. I'm down to stick with the console app tho if you you are?
+        Everyone else?
+         */
+
+
         bool Login(int userId);
         bool Logout();
 

@@ -16,7 +16,7 @@ namespace Oasis.Reports
         public override string Title => "Incentive " + base.Title;
         public override IEnumerable<IReportRow> Rows => throw new NotImplementedException();
 
-        public override IEnumerable<Statistic<dynamic>> Statistics
+        public override IEnumerable<Summary<dynamic>> Summaries
         {
             get
             {

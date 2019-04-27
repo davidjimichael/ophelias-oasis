@@ -343,27 +343,65 @@ namespace Oasis.Dev
 
         public bool PerformDailyActions(Reservation res)
         {
-            throw new NotImplementedException();
+            bool result = false;
+            bool temp_result;
+
+            temp_result = PerformDailyActionsConventional(res);
+            result = result | !temp_result;
+
+            temp_result = PerformDailyActionsSixtyDay(res);
+            result = result | !temp_result;
+
+            // get reports
+            //temp_result = PerformDailyActionsConventional(res);
+            //result = result | !temp_result;
+
+            return !result;
         }
 
         public bool PerformDailyActionsConventional(Reservation res)
         {
-            throw new NotImplementedException();
+            bool isNoShow = res.IsNoShow;
+
+            // if cancelled 
+            switch (res.Status)
+            {
+                default: return true && !isNoShow;
+            }
         }
 
         public bool PerformDailyActionsIncentive(Reservation res)
         {
+            // Doesn't look like there is anything for this
             throw new NotImplementedException();
         }
 
         public bool PerformDailyActionsPrepaid(Reservation res)
         {
+            // Doesn't look like there is anything for this
             throw new NotImplementedException();
         }
 
         public bool PerformDailyActionsSixtyDay(Reservation res)
         {
-            throw new NotImplementedException();
+            // send email 45 days in advance to say that needs to be paid in 15 days
+            // check if 30 days out and not paid > cancel res
+            if ((res.Start - DateTime.Now).TotalDays == 45)
+            {
+                SendPaymentEmail(res.Email);
+            }
+
+            if ((res.Start - DateTime.Now).TotalDays == 30)
+            {
+                res.Status = ReservationStatus.Cancelled;
+            }
+            return true;
+        }
+
+        public bool SendPaymentEmail(string email)
+        {
+            // send email 45 days in advance to say that needs to be paid in 15 days
+            return true;
         }
 
         public bool Reset()

@@ -346,12 +346,18 @@ namespace Oasis.Dev
             bool result = false;
             bool temp_result;
 
-            temp_result = PerformDailyActionsConventional(res);
-            result = result | !temp_result;
+            if (res.Type == ReservationType.Conventional)
+            {
+                temp_result = PerformDailyActionsConventional(res);
+                result = result | !temp_result;
+            }
 
-            temp_result = PerformDailyActionsSixtyDay(res);
-            result = result | !temp_result;
-
+            if (res.Type == ReservationType.SixtyDay)
+            {
+                temp_result = PerformDailyActionsSixtyDay(res);
+                result = result | !temp_result;
+            }
+            
             // get reports
             //temp_result = PerformDailyActionsConventional(res);
             //result = result | !temp_result;
@@ -385,12 +391,12 @@ namespace Oasis.Dev
         public bool PerformDailyActionsSixtyDay(Reservation res)
         {
             // send email 45 days in advance to say that needs to be paid in 15 days
-            // check if 30 days out and not paid > cancel res
             if ((res.Start - DateTime.Now).TotalDays == 45)
             {
                 SendPaymentEmail(res.Email);
             }
 
+            // check if 30 days out and not paid -> cancel res
             if ((res.Start - DateTime.Now).TotalDays == 30)
             {
                 res.Status = ReservationStatus.Cancelled;

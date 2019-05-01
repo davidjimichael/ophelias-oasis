@@ -8,7 +8,6 @@ namespace Oasis.Models
         public Room[] Rooms;
         public double Rate;
 
-        // Should these be in the Hotel class? Probably, are they? No.
         public static readonly int DEFAULT_RATE = 100;
         public static readonly int DEFAULT_ROOM_COUNT = 45;
 
@@ -22,7 +21,7 @@ namespace Oasis.Models
             }
             else
             {
-                // just make new rooms by default
+                //just make new rooms by default
                 Rooms = new Room[DEFAULT_ROOM_COUNT];
 
                 for (int i = 0; i < Rooms.Length; i++)

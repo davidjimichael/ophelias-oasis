@@ -66,7 +66,7 @@ namespace Oasis.Models
                 case ReservationType.Conventional: return 1;
                 case ReservationType.Prepaid: return 0.75;
                 case ReservationType.SixtyDay: return 0.85;
-                case ReservationType.Incentive: return 0.80; // todo incentive calculation here
+                case ReservationType.Incentive: return 0.80; //todo incentive calculation here
                 default: throw new NotImplementedException("Unknown ReservationType: " + type);
             }
         }

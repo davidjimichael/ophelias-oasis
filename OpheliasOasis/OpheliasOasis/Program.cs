@@ -7,14 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-/*
-Current Mentality: Simple and Inefficient Code with Passive-Agressive Execution
- */
+
 namespace Oasis
 {
     class Program
     {
-        // unreal security measures. 
+        // unreal security measures.
+        // used for the sake of this class to demonstrate
         // Developer = 2, Manager = 1, Employee = 0, Logout = -1;
         public static int Employee; // mandatory field for backend logging and whatnot figured this was the easiest way to set it
         public static Dev.Hotel OpheliasOasis;
@@ -28,14 +27,14 @@ namespace Oasis
             string input = "";
             try
             {
-
+                Console.WriteLine("Welcome to Ophleias Oasis Hotel System");
+                Console.WriteLine("Type a command or help for a command list");
                 while (!input.StartsWith("Q") && !input.StartsWith("q"))
                 {
                     input = Console.ReadLine();
 
-                    if (input.StartsWith("help")) // dont add a space its the only command in the line
+                    if (input.StartsWith("help"))
                     {
-                        // consider this grouping my only documentation for rn
                         Console.WriteLine("Command List:");
                         Console.WriteLine("user <login> <userId>");
                         Console.WriteLine("user <logout>");
@@ -50,6 +49,7 @@ namespace Oasis
                         Console.WriteLine("res card <id> <name> <card_number> <exp> <cvc> <address> <city> <state> <zip>");
                         Console.WriteLine("report eor <startdate> <enddate> (Expected Occupancy Report)");
                     }
+                    //change user lever
                     else if (input.StartsWith("user "))
                     {
                         var toks = input.Split(' ');
@@ -73,6 +73,7 @@ namespace Oasis
                             }
                         }
                     }
+                    //set rate
                     else if (input.StartsWith("rate "))
                     {
                         var toks = input.Split(' ');
@@ -90,6 +91,7 @@ namespace Oasis
                             }
                         }
                     }
+                    //create, modify, cancel reservations
                     else if (input.StartsWith("res "))
                     {
 
@@ -171,6 +173,7 @@ namespace Oasis
                             }
                         }
                     }
+                    //generate reports
                     else if (input.StartsWith("report "))
                     {
                         var toks = input.Split(' ');
@@ -187,6 +190,7 @@ namespace Oasis
                             }
                         }
                     }
+                    //admin activities
                     else if (input.StartsWith("admin "))
                     {
                         var toks = input.Split(' ');
@@ -211,7 +215,7 @@ namespace Oasis
                     }
                     else
                     {
-                        Console.WriteLine("Command Not Found: Type 'help' for help");
+                        Console.WriteLine("Command Not Found: Type 'help' for command list");
                     }
                 }
             }

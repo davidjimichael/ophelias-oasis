@@ -25,7 +25,7 @@ namespace Oasis.Models
 
         public bool IsValid()
         {
-            // for right now just assume the information is correct and check if its expired
+            //only checking expiration
             return DateTime.Now < Expiration;
         }
     }

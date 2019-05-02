@@ -23,6 +23,8 @@ namespace Oasis.Reports
 
         private IEnumerable<IReportRow> _Rows { get; set; }
 
+        public int ResId { get; set; }
+
         public override IEnumerable<IReportRow> Rows
         {
             get
@@ -37,21 +39,20 @@ namespace Oasis.Reports
                 var rows = new AccomodationBillReportRow[length];
                 int offset = 0;
 
-                foreach (var res in this.Reservations)
+                var res = this.Reservations.Where(r => r.Id == this.ResId).First();
+
+                rows[offset] = new AccomodationBillReportRow()
                 {
-                    rows[offset] = new AccomodationBillReportRow()
-                    {
-                        Date = Start.AddDays(offset),
-                        BillAmount = (res.PenaltyCharge ?? 0) + (res.Multiplier * res.BaseRates.Sum()),
-                        AmountPaid = (res.AmountPaid ?? 0.0),
-                        CheckIn = res.CheckIn,
-                        CheckOut = res.CheckOut,
-                        Name = res.Name,
-                        Nights = length,
-                        PaidOn = res.PaidOn,
-                        Room = res.Room,
-                    };
-                }
+                    Date = Start.AddDays(offset),
+                    BillAmount = (res.PenaltyCharge ?? 0) + (res.Multiplier * res.BaseRates.Sum()),
+                    AmountPaid = (res.AmountPaid ?? 0.0),
+                    CheckIn = res.CheckIn,
+                    CheckOut = res.CheckOut,
+                    Name = res.Name,
+                    Nights = length,
+                    PaidOn = res.PaidOn,
+                    Room = res.Room,
+                };
 
                 _Rows = _Rows.Concat(rows);
 

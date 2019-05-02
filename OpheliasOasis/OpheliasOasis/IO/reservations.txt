@@ -1,1 +1,0 @@
-{"Id":2019106,"Room":0,"ChangedFrom":null,"PenaltyCharge":null,"PaymentId":2019106,"Name":"david","Email":"email","Start":"2019-01-01T00:00:00","End":"2019-01-05T00:00:00","PayBy":"2018-12-02T00:00:00","CheckIn":null,"CheckOut":null,"PaidOn":null,"BaseRates":[100.0,100.0,100.0,100.0,100.0],"Multiplier":0.85,"AmountPaid":null,"Type":0,"Status":0,"IsNoShow":true}

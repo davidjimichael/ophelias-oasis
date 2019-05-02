@@ -32,7 +32,6 @@ namespace Oasis.Reports
         public DateTime Start;
         public DateTime? End;
         public static readonly short DEFAULT_REPORT_LENGTH = 30;
-
         private IEnumerable<Models.Day> _Days;
         private IEnumerable<Models.Reservation> _Reservations;
         public IEnumerable<Models.Day> Days

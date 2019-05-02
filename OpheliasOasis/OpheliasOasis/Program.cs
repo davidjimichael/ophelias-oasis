@@ -36,18 +36,27 @@ namespace Oasis
                     if (input.StartsWith("help"))
                     {
                         Console.WriteLine("Command List:");
-                        Console.WriteLine("user <login> <userId>");
+                        Console.WriteLine("user <login>, <userId>");
                         Console.WriteLine("user <logout>");
                         Console.WriteLine("user display");
-                        Console.WriteLine("rate set <startdate> <enddate> <rate>");
+                        Console.WriteLine("rate set <startdate>, <enddate>, <rate>");
                         Console.WriteLine("admin reset");
                         Console.WriteLine("admin daily");
-                        Console.WriteLine("res create <name> <email> <startdate> <enddate>");
-                        Console.WriteLine("res change <id> <startdate> <enddate>");
+                        Console.WriteLine("res create <name>, <email>, <startdate>, <enddate>");
+                        Console.WriteLine("res change <id>, <startdate>, <enddate>");
                         Console.WriteLine("res cancel <id>");
-                        Console.WriteLine("res list <startdate> <enddate>");
-                        Console.WriteLine("res card <id> <name> <card_number> <exp> <cvc> <address> <city> <state> <zip>");
-                        Console.WriteLine("report eor <startdate> <enddate> (Expected Occupancy Report)");
+                        Console.WriteLine("res list <startdate>, <enddate>");
+                        Console.WriteLine("res card <id>, <name>, <card_number>, <exp>, <cvc>, <address>, <city>, <state>, <zip>");
+                        Console.WriteLine("report eor <startdate>, <enddate> (Expected Occupancy Report)");
+                        Console.WriteLine("report erir <startdate>, <enddate> (Expected Room Income Report)");
+                        Console.WriteLine("report dor <startdate>, <enddate> (Daily Occupancy Report)");
+                        Console.WriteLine("report ab <startdate>, <enddate> (Accomodation Bill Occupancy Report)");
+                        Console.WriteLine("report ir <startdate>, <enddate> (Incentive Report)");
+                        Console.WriteLine("clear");
+                    }
+                    else if (input.StartsWith("clear"))
+                    {
+                        Console.Clear();
                     }
                     //change user lever
                     else if (input.StartsWith("user "))
@@ -178,15 +187,39 @@ namespace Oasis
                     {
                         var toks = input.Split(' ');
 
-                        if (toks.Length == 4)
+                        if (toks.Length == 4 || toks.Length == 5)
                         {
-                            if ((Employee == 1 || Employee == 2) && toks[1].Equals("eor"))
+                            if ((Employee == 1 || Employee == 2))
                             {
                                 var start = DateTime.TryParse(toks[2], out DateTime s) ? s : DateTime.Now;
                                 var end = DateTime.TryParse(toks[3], out DateTime e) ? e : DateTime.Now.AddDays(1); // prevent error end < start
-                                
-                                var report = (ExpectedOcupancyReport)OpheliasOasis.GetExpectedOccupancyReport(start, end);
-                                Console.WriteLine(string.Join("\n", report.SampleOutput));
+
+                                if (toks[1].Equals("eor"))
+                                {
+                                    var report = (ExpectedOcupancyReport)OpheliasOasis.GetExpectedOccupancyReport(start, end);
+                                    Console.WriteLine(string.Join("\n", report?.SampleOutput));
+                                }
+                                if (toks[1].Equals("erir"))
+                                {
+                                    var report = (ExpectedRoomIncomeReport)OpheliasOasis.GetExpectedRoomIncomeReport(start, end);
+                                    Console.WriteLine(string.Join("\n", report?.SampleOutput));
+                                }
+                                if (toks[1].Equals("dor"))
+                                {
+                                    var report = (DailyOccupancyReport)OpheliasOasis.GetDailyOccupancyReport(start, end);
+                                    Console.WriteLine(string.Join("\n", report?.SampleOutput));
+                                }
+                                if (toks[1].Equals("ab"))
+                                {
+                                    var resId = int.TryParse(toks[4], out int i) ? i : -1;
+                                    var report = (AccomodationBill)OpheliasOasis.GetAccomodationBill(resId, start, end);
+                                    Console.WriteLine(string.Join("\n", report?.SampleOutput));
+                                }
+                                if (toks[1].Equals("ir"))
+                                {
+                                    var report = (IncentiveReport)OpheliasOasis.GetIncentiveReport(start, end);
+                                    Console.WriteLine(string.Join("\n", report?.SampleOutput));
+                                }
                             }
                         }
                     }
@@ -209,7 +242,7 @@ namespace Oasis
                             }
                         }
                     }
-                    else if (input.StartsWith("Q") || input.StartsWith("q"))
+                    else if (input.ToLower().StartsWith("q"))
                     {
                         // ignore till loop skip else
                     }

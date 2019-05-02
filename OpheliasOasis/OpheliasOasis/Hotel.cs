@@ -244,10 +244,17 @@ namespace Oasis.Dev
         }
    
         #region reports
-        public IReport GetAccomodationBill(DateTime start, DateTime? end = null)
+        public IReport GetAccomodationBill(int resId, DateTime start, DateTime? end = null)
         {
+            if (resId < 0)
+            {
+                // invalid resId
+                return null;
+            }
+
             return new AccomodationBill
             {
+                ResId = resId,
                 Start = start,
                 End = end ?? start,
             };
@@ -601,7 +608,7 @@ namespace Oasis
         IReport GetIncentiveReport(DateTime start, DateTime? end = null);
         IReport GetDailyArrivalsReport(DateTime start, DateTime? end = null);
         IReport GetDailyOccupancyReport(DateTime start, DateTime? end = null);
-        IReport GetAccomodationBill(DateTime start, DateTime? end = null);
+        IReport GetAccomodationBill(int resId, DateTime start, DateTime? end = null);
         //IEnumerable<double> OccupancyRates(DateTime start, DateTime end);
         //double OccupancyRateAverage(DateTime start, DateTime end);
         //double CalculateBillTotal(Reservation res);

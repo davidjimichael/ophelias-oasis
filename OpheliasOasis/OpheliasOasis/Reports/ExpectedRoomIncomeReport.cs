@@ -8,22 +8,7 @@ namespace Oasis.Reports
     {
         public DateTime Date { get; set; }
         public double NightlyIncome { get; set; }
-
     }
-
-    /*
-    The expected room income report is a one-page report that shows the expected
-income from the rooms each night for the next 30 days.  Each line of the report shows the
-date and the expected income for that night.  The last two lines of the report are the total
-income for that period and the average income for that period.
-
-        Shows the expected income from rooms reserved for the next 30 days
-Each line shows:
-Date
-Expected Income
-Last 2 lines are total income for that period and average income for that period
-
-     */
     public class ExpectedRoomIncomeReport : HotelReport<ExpectedRoomIncomeReportRow>
     {
         public override string Title => "Expected Room Income " + base.Title;
@@ -40,12 +25,23 @@ Last 2 lines are total income for that period and average income for that period
 
                 var DAL = new IO.DAL();
                 var rows = new List<ExpectedRoomIncomeReportRow>();
+                var days = DAL.Read<Models.Day>(filter: d => Start <= d.Date && d.Date <= End);
 
-                int length = (End - Start).Value.Days + 1;
-
-                for (int i = 0; i < length; i++)
+                for (int i = 0; i < days.Count(); i++)
                 {
-                    
+                    var ids = days.ElementAt(i).Rooms
+                        .Where(r => !r.IsOpen())
+                        .Select(r => r.ResId);
+
+                    var reservations = DAL.Read<Models.Reservation>(filter: r => ids.Contains(r.Id));
+
+                    var income = reservations.Select(r => r.BaseRates.Sum() * r.Multiplier).Sum();
+
+                    rows.Add(new ExpectedRoomIncomeReportRow
+                    {
+                        Date = Start.AddDays(i),
+                        NightlyIncome = income,
+                    });
                 }
 
                 _Rows = rows.OrderBy(r => r.NightlyIncome);

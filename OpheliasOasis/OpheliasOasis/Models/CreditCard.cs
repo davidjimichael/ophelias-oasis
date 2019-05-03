@@ -1,22 +1,15 @@
-﻿using System;
-
-namespace Oasis.Models
+﻿namespace Oasis.Models
 {
-    public interface IPaymentInfo
-    {
-        bool IsValid();
-    }
-
     /// <summary>
-    ///     Credit card numbers stored as XXXXXXXXXXXXXXXX
+    ///     Credit card numbers stored as string formatted XXXXXXXXXXXXXXXX
     /// </summary>
-    public class CreditCard : IPaymentInfo
+    public class CreditCard
     {
         public int Id;
         //public int ResId;
         public string Name;
         public string Number;
-        public DateTime Expiration;
+        public System.DateTime Expiration;
         public string CVC;
         public string Address;
         public string City;
@@ -26,7 +19,7 @@ namespace Oasis.Models
         public bool IsValid()
         {
             //only checking expiration
-            return DateTime.Now < Expiration;
+            return System.DateTime.Now < Expiration;
         }
     }
 }

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Oasis.Models
+﻿namespace Oasis.Models
 {
     public class Room
     {
@@ -27,7 +25,7 @@ namespace Oasis.Models
                 if (value < 0)
                 {
                     // normally I wouldn't set this but I feel like this is actually really imporant to not mess up.
-                    throw new InvalidOperationException("Reservation Ids cannot be negative");
+                    throw new System.InvalidOperationException("Reservation Ids cannot be negative");
                 }
                 else
                 {

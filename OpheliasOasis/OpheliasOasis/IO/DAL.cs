@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Oasis.Dev;
 using Oasis.Models;
 using System;
 using System.Collections.Generic;
@@ -21,8 +20,6 @@ namespace Oasis.IO
 
     public class DAL : IDAL
     {
-        // todo see theres a way to key on a serialized object so then we dont have to convert each 
-        // object to check it against the filter
         public DAL() { }
 
         public bool Create<T>(IEnumerable<T> items)
@@ -69,8 +66,6 @@ namespace Oasis.IO
 
                 if (filter != null)
                 {
-                    // get all excluding the ones we will delete
-                    // todo add persistant logs
                     toSave = prev.Where(p => !filter(p));
                     toDelete = prev.Where(p => filter(p));
                 }
@@ -119,8 +114,7 @@ namespace Oasis.IO
                 return Enumerable.Empty<T>();
             }
         }
-
-        // todo make so that update takes a return void update method which is calls from the Func<T, T>
+        
         public bool Update<T>(Func<T, T> update, Func<T, bool> filter = null)
         {
             try
@@ -158,43 +152,5 @@ namespace Oasis.IO
                 return false;
             }
         }
-
-        #region untested
-        // todo add persistant logs, not sure how I want to do this yet. Here's a possbility, but not what I recommend. 
-        public IEnumerable<T> _Delete<T>(Func<T, bool> filter = null)
-        {
-            try
-            {
-                IOBoundary iob = IOBoundary.Create<T>();
-                IEnumerable<T> prev = iob.Read().Select(line => JsonConvert.DeserializeObject<T>(line));
-
-                if (filter != null)
-                {
-                    prev = prev.Where(filter);
-                }
-
-                prev.Select(p => DeleteRecord(p));
-
-                return prev;
-            }
-            catch (Exception e)
-            {
-                if (Program.Employee == 2)
-                {
-                    Console.WriteLine(e.Message);
-                }
-                return Enumerable.Empty<T>();
-            }
-        }
-
-        private T DeleteRecord<T>(T p)
-        {
-            if (p is Reservation res)
-            {
-                res.Status = ReservationStatus.Cancelled;
-            }
-            throw new NotImplementedException();
-        }
-        #endregion
     }
 }

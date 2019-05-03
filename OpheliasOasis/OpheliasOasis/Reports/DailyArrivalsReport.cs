@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Oasis.Reports
 {
-    //!(r.End < start || end < r.Start)
     public class DailyArrivalsReportRow : IReportRow
     {
         public DateTime Date { get; set; }
@@ -19,16 +16,6 @@ namespace Oasis.Reports
         public DateTime Departure { get; set; }
     }
 
-    /// <summary>
-    ///  Daily Arrivals Report
-    ///  List of guests to arrive
-    ///  Each line should include:
-    ///     Guest Name
-    ///     Reservation Type
-    ///     Assigned Room Number
-    ///     Date of Departure
-    ///     Report is sorted by guest name
-    /// </summary>
     public class DailyArrivalsReport : HotelReport<DailyArrivalsReportRow>
     {
         public override string Title => "Daily Arrivals " + base.Title;

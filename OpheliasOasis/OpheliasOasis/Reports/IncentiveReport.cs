@@ -1,18 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Oasis.Reports
 {
-    /*
-hows how much money would be lost for the next 30 days if the incentive discount was in place (at 20%)
-Each line should show:
-Date
-Total incentive discount
-
-     */
     public class IncentiveReportRow : IReportRow
     {
         public DateTime Date { get; set; }
@@ -54,13 +45,7 @@ Total incentive discount
                 return _Rows;
             }
         }
-
-        /*
-         
-Last 2 lines of the report:
-Total incentive discount for that period
-And average incentive discount for that period
-             */
+        
         public override IEnumerable<Summary<dynamic>> Summaries
         {
             get

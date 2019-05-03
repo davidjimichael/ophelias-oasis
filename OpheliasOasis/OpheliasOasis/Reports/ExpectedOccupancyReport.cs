@@ -1,5 +1,4 @@
-﻿using Oasis.Dev;
-using Oasis.IO;
+﻿using Oasis.IO;
 using Oasis.Models;
 using System;
 using System.Collections.Generic;
@@ -120,7 +119,6 @@ namespace Oasis.Reports
             {
                 var stats = new List<Summary<dynamic>>();
 
-                // I'm not sure if this is needed but it feels like it is
                 var rows = Rows;
 
                 var avgOccupancy = new Summary<dynamic>()

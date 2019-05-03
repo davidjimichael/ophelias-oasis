@@ -108,8 +108,7 @@ namespace Oasis.Reports
                 return lines;
             }
         }
-
-        // todo this doesnt work if end is null
-        public string Name => string.Format("Report from {0} to {1}", Start.ToShortDateString(), End?.ToShortDateString());
+        
+        public string Name => string.Format("Report from {0} to {1}", Start.ToShortDateString(), End?.ToShortDateString() ?? "EOD");
     }
 }

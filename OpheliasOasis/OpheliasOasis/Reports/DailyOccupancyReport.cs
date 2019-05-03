@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Oasis.Reports
 {
@@ -60,6 +58,8 @@ namespace Oasis.Reports
                 }
 
                 var ordered = rows.OrderBy(r => r.Room);
+
+                this._Rows = ordered;
 
                 return ordered;
             }

@@ -1,6 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Oasis.Dev;
-using Oasis.IO;
 using Oasis.Models;
 using Oasis.Reports;
 using System;
@@ -12,19 +10,15 @@ namespace Oasis
 {
     class Program
     {
-        // unreal security measures.
-        // used for the sake of this class to demonstrate
-        // Developer = 2, Manager = 1, Employee = 0, Logout = -1;
-        public static int Employee; // mandatory field for backend logging and whatnot figured this was the easiest way to set it
-        public static Dev.Hotel OpheliasOasis;
-        //public static IHotel OpheliasOasis;
+        public static int Employee = -1;
+        public static IHotel OpheliasOasis;
 
         static void Main()
         {
-            Program.Employee = -1;
-            OpheliasOasis = new Dev.Hotel();
-            //OpheliasOasis = new Dev.Hotel(id: 0);
+            OpheliasOasis = new Hotel();
+
             string input = "";
+
             try
             {
                 Console.WriteLine("Welcome to Ophleias Oasis Hotel System");
@@ -36,29 +30,36 @@ namespace Oasis
                     if (input.StartsWith("help"))
                     {
                         Console.WriteLine("Command List:");
-                        Console.WriteLine("user <login>, <userId>");
+                        Console.WriteLine("user <login> <userId>");
                         Console.WriteLine("user <logout>");
                         Console.WriteLine("user display");
                         Console.WriteLine("rate set <startdate>, <enddate>, <rate>");
                         Console.WriteLine("admin reset");
                         Console.WriteLine("admin daily");
-                        Console.WriteLine("res create <name>, <email>, <startdate>, <enddate>");
-                        Console.WriteLine("res change <id>, <startdate>, <enddate>");
+                        Console.WriteLine("res create <name> <email> <startdate>, <enddate>");
+                        Console.WriteLine("res change <id> <startdate> <enddate>");
                         Console.WriteLine("res cancel <id>");
-                        Console.WriteLine("res list <startdate>, <enddate>");
-                        Console.WriteLine("res card <id>, <name>, <card_number>, <exp>, <cvc>, <address>, <city>, <state>, <zip>");
-                        Console.WriteLine("report eor <startdate>, <enddate> (Expected Occupancy Report)");
-                        Console.WriteLine("report erir <startdate>, <enddate> (Expected Room Income Report)");
-                        Console.WriteLine("report dor <startdate>, <enddate> (Daily Occupancy Report)");
-                        Console.WriteLine("report ab <startdate>, <enddate> (Accomodation Bill Occupancy Report)");
-                        Console.WriteLine("report ir <startdate>, <enddate> (Incentive Report)");
+                        Console.WriteLine("res list <startdate> <enddate>");
+                        Console.WriteLine("res card <id> <name> <card_number> <exp> <cvc> <address> <city> <state> <zip>");
+                        Console.WriteLine("report eor <startdate> <enddate> (Expected Occupancy Report)");
+                        Console.WriteLine("report erir <startdate> <enddate> (Expected Room Income Report)");
+                        Console.WriteLine("report dor <startdate> <enddate> (Daily Occupancy Report)");
+                        Console.WriteLine("report ab <startdate> <enddate> (Accomodation Bill Occupancy Report)");
+                        Console.WriteLine("report ir <startdate> <enddate> (Incentive Report)");
                         Console.WriteLine("clear");
+                        Console.WriteLine("Note: values within <> cannot contain spaces use \"-\" instead");
+                    }
+                    else if (input.Length > 0 && !input.StartsWith("user login") && Program.Employee == -1)
+                    {
+                        // user is logged out and tried to make a command
+                        Console.WriteLine("Must be logged in to execute commands");
+                        // skip processing any commands from someone not logged in
+                        continue;
                     }
                     else if (input.StartsWith("clear"))
                     {
                         Console.Clear();
                     }
-                    //change user lever
                     else if (input.StartsWith("user "))
                     {
                         var toks = input.Split(' ');
@@ -82,7 +83,6 @@ namespace Oasis
                             }
                         }
                     }
-                    //set rate
                     else if (input.StartsWith("rate "))
                     {
                         var toks = input.Split(' ');
@@ -100,18 +100,15 @@ namespace Oasis
                             }
                         }
                     }
-                    //create, modify, cancel reservations
                     else if (input.StartsWith("res "))
                     {
 
                         var toks = input.Split(' ');
 
-                        // todo add this one check
                         if (toks.Length == 6)
                         {
                             if (Employee != -1 && toks[1].Equals("create"))
                             {
-                                // name email start end
                                 var start = DateTime.Parse(toks[4]);
                                 var end = DateTime.Parse(toks[5]);
 
@@ -123,7 +120,6 @@ namespace Oasis
                         {
                             if (Employee != -1 && toks[1].Equals("cancel"))
                             {
-                                // id
                                 int id = int.TryParse(toks[2], out int result) ? result : -1;
                                 var cancelled = OpheliasOasis.CancelReservation(id);
                                 Console.WriteLine(cancelled);
@@ -133,7 +129,6 @@ namespace Oasis
                         {
                             if (Employee != -1 && toks[1].Equals("change"))
                             {
-                                // id start end
                                 var id = int.TryParse(toks[2], out int result) ? result : -1;
                                 var start = DateTime.Parse(toks[3]);
                                 var end = DateTime.Parse(toks[4]);
@@ -146,7 +141,6 @@ namespace Oasis
                         {
                             if (Employee != -1 && toks[1].Equals("card"))
                             {
-                                // res card name num exp cvc add city state zip
                                 CreditCard card = new CreditCard
                                 {
                                     Id = int.TryParse(toks[2], out int id) ? id : -1,
@@ -182,7 +176,6 @@ namespace Oasis
                             }
                         }
                     }
-                    //generate reports
                     else if (input.StartsWith("report "))
                     {
                         var toks = input.Split(' ');
@@ -223,7 +216,6 @@ namespace Oasis
                             }
                         }
                     }
-                    //admin activities
                     else if (input.StartsWith("admin "))
                     {
                         var toks = input.Split(' ');
@@ -237,14 +229,13 @@ namespace Oasis
                             }
                             else if (Employee == 2 && toks[1].Equals("daily"))
                             {
-                                // todo allow an optional date parameter to trigger daily events on a particular day
                                 OpheliasOasis.TriggerDailyActivities();
                             }
                         }
                     }
                     else if (input.ToLower().StartsWith("q"))
                     {
-                        // ignore till loop skip else
+                        // skip
                     }
                     else
                     {
@@ -263,7 +254,7 @@ namespace Oasis
             {
                 Console.WriteLine("Press any key to exit.");
             }
-            System.Console.ReadKey();
+            Console.ReadKey();
         }
     }
 }
